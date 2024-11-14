@@ -16,6 +16,30 @@ public:
 
 #pragma region CORE_FUNCTIONS
 	/**
+	* Get the Protocol used to send Capsa requests.
+	* 
+	* @return FString The Protocol to use.
+	*/
+	UFUNCTION( BlueprintPure, Category = "Capsa|Core" )
+	FString							GetProtocol() const;
+
+	/**
+	* Get the API URL Prefix for sending auth/log chunks to Capsa.
+	*
+	* @return FString The API Prefix.
+	*/
+	UFUNCTION( BlueprintPure, Category = "Capsa|Core" )
+	FString							GetAPIPrefix() const;
+
+	/**
+	* Get the Web URL Prefix for generating URLs to access Logs on the hosted Capsa Service.
+	*
+	* @return FString The Web Prefix.
+	*/
+	UFUNCTION( BlueprintPure, Category = "Capsa|Core" )
+	FString							GetWebPrefix() const;
+
+	/**
 	* Get the Capsa Base URL.
 	* Suffixes are then applied to make actual requests.
 	* 
@@ -33,6 +57,15 @@ public:
 	FString							GetCapsaAuthKey() const;
 
 	/**
+	* Get the path to append to the Capsa Base URL, that all suffixes must follow to
+	* generate full Capsa API URLs.
+	*
+	* @return FString The Capsa URL API Path.
+	*/
+	UFUNCTION( BlueprintPure, Category = "Capsa|Core" )
+	FString							GetCapsaURLAPIPath() const;
+
+	/**
 	* Get the suffix to append to the Capsa Base URL to generate the full Auth URL.
 	*
 	* @return FString The Capsa Base URL Auth Suffix.
@@ -42,6 +75,15 @@ public:
 #pragma endregion CORE_FUNCTIONS
 
 #pragma region LOG_FUNCTIONS
+	/**
+	* Get the suffix to append to the Capsa Base URL to generate the Log URL.
+	* A LogID will be appended after this, provided a successful Auth request has been made.
+	*
+	* @return FString The Capsa URL Log Suffix.
+	*/
+	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
+	FString							GetCapsaURLLogSuffix() const;
+
 	/**
 	* Get the suffix to append to the Capsa Base URL to generate the full Log Metadata URL.
 	*
@@ -100,15 +142,49 @@ public:
 	*/
 	UFUNCTION( BlueprintPure, Category = "Capsa|Component" )
 	TSubclassOf<AActor>				GetAutoAddClass() const;
+
+	/**
+	* Get the time between Loops to look for the AutoAddClass.
+	*
+	* @return float The Look for Class Time value.
+	*/
+	UFUNCTION( BlueprintPure, Category = "Capsa|Component" )
+	float							GetLookForClassTime() const;
+
+	/**
+	* Get the number of times to Loop when lookin for AutoAddClass
+	*
+	* @return int32 The Look for Class Loop Max value.
+	*/
+	UFUNCTION( BlueprintPure, Category = "Capsa|Component" )
+	int32							GetLookForClassLoopMax() const;
 #pragma endregion COMPONENT_FUNCTIONS
 
 protected:
 
 #pragma region CORE_PROPERTIES
 	/**
-	* The Remote URL for where Capsa Service is running.
+	* The Protocol to use to access Capsa.
 	*/
 	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core" )
+	FString							Protocol;
+
+	/**
+	* The API Prefix (sub-domain), if needed.
+	*/
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core", meta = ( DisplayName = "Capsa API Prefix" ) )
+	FString							APIPrefix;
+
+	/**
+	* The Web Prefix (sub-domain), if needed.
+	*/
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core" )
+	FString							WebPrefix;
+
+	/**
+	* The Remote URL for where Capsa Service is running.
+	*/
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core", meta = ( DisplayName = "Capsa Base URL" ) )
 	FString							CapsaBaseURL;
 
 	/**
@@ -118,23 +194,36 @@ protected:
 	FString							CapsaAuthKey;
 
 	/**
+	* The suffix to add to the CapsaBaseURL (and then add suffixes) to generate the full URLs.
+	*/
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core", meta = ( DisplayName = "Capsa URL API Path" ) )
+	FString							CapsaURLAPIPath;
+
+	/**
 	* The suffix to add to the CapsaBaseURL to generate the full Auth URL.
 	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core" )
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core", meta = ( DisplayName = "Capsa URL Auth Suffix" ) )
 	FString							CapsaURLAuthSuffix;
 #pragma endregion CORE_PROPERTIES
 
 #pragma region LOG_PROPERTIES
 	/**
+	* The suffix to add to the CapsaBaseURL to generate the Log Path.
+	* A LogID will be appended to this, after a valid Auth request.
+	*/
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log", meta = ( DisplayName = "Capsa URL Log Suffix" ) )
+	FString							CapsaURLLogSuffix;
+
+	/**
 	* The suffix to add to the CapsaBaseURL to generate the full Metadata URL.
 	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log" )
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log", meta = ( DisplayName = "Capsa URL Log Metadata Suffix" ) )
 	FString							CapsaURLLogMetadataSuffix;
 
 	/**
 	* The suffix to add to the CapsaBaseURL to generate the full Log Cunk URL.
 	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log" )
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log", meta = ( DisplayName = "Capsa URL Log Chunk Suffix" ) )
 	FString							CapsaURLLogChunkSuffix;
 
 	/**
@@ -169,8 +258,22 @@ protected:
 	* The AActor class which the Capsa Component should be auto-added to.
 	* Will only be checked and added if bAutoAddCapsaComponent is true.
 	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Component" )
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Component", Meta=(EditCondition="bAutoAddCapsaComponent" ) )
 	TSubclassOf<AActor>				AutoAddClass;
+
+	/**
+	* How often, in seconds, should the Timer loop to look for the AutoAddClass.
+	*/
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Component", AdvancedDisplay, Meta = ( EditCondition = "bAutoAddCapsaComponent" ) )
+	float							LookForClassTime;
+
+	/**
+	* How many times should the Timer look for a matching class.
+	* Prevents infinite looping.
+	*/
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Component", AdvancedDisplay, Meta = ( EditCondition = "bAutoAddCapsaComponent" ) )
+	int32							LookForClassLoopMax;
+
 #pragma endregion COMPONENT_PROPERTIES
 
 private:

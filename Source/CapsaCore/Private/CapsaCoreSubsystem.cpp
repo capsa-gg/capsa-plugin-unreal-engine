@@ -10,6 +10,7 @@
 #include "Interfaces/IHttpResponse.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/GameModeBase.h"
 
 
 /**
@@ -33,15 +34,11 @@ public:
         for( const FBufferedLine& Line : Buffer )
         {
             // Construct the Time from the Seconds when the Line was added
-            FTimespan TimeSpan = FTimespan::FromSeconds( Line.Time );
-            FDateTime Time;
-            Time += TimeSpan;
+            FDateTime Time = FDateTime::FromUnixTimestampDecimal( Line.Time );
             FWideStringBuilderBase TimeStamp;
             // format: yyyy.mm.dd-hh.mm.ss:mil
-            Time.ToString( TEXT( "%Y.%m.%d-%H.%M.%S:%s" ), TimeStamp );
-
-            Log.Append( FString::Printf( TEXT("[%s]"), *TimeStamp ) );
-            Log.Append( FString::Printf( TEXT( "[%d]" ), Line.Verbosity ) );
+            Log.Append( FString::Printf( TEXT( "[%s]" ), *Time.ToString( TEXT( "%Y.%m.%d-%H.%M.%S.%s" ) ) ) );
+            Log.Append( FString::Printf( TEXT( "[%s]" ), *UCapsaCoreFunctionLibrary::GetLogVerbosityString( Line.Verbosity ) ) );
             Log.Append( FString::Printf( TEXT( "[%s]: " ), *Line.Category.Resolve().ToString() ) );
             Log.Append( Line.Data.Get() );
             Log.Append( LINE_TERMINATOR_ANSI );
@@ -67,6 +64,7 @@ UCapsaCoreSubsystem::UCapsaCoreSubsystem()
     , LogID( "" )
     , LinkWeb( "" )
     , Expiry( "" )
+    , LookForClassLoopCount( 0 )
 {
 }
 
@@ -88,12 +86,54 @@ void UCapsaCoreSubsystem::Deinitialize()
         FWorldDelegates::OnPostWorldInitialization.Remove( OnPostWorldInitializationHandle );
     }
 
+    FGameModeEvents::GameModePostLoginEvent.RemoveAll( this );
+    FGameModeEvents::GameModeLogoutEvent.RemoveAll( this );
+
 	Super::Deinitialize();
 }
 
 bool UCapsaCoreSubsystem::IsAuthenticated() const
 {
     return ( Token.IsEmpty() == false ) && ( LogID.IsEmpty() == false );
+}
+
+FString UCapsaCoreSubsystem::GetLogID() const
+{
+    return LogID;
+}
+
+bool UCapsaCoreSubsystem::RegisterLinkedLogID( const FString& LinkedLogID )
+{
+    // Don't link with self.
+    if( LogID.Equals( LinkedLogID ) == true )
+    {
+        return false;
+    }
+
+    if( LinkedLogIDs.Contains( LinkedLogID ) == true )
+    {
+        return false;
+    }
+
+    LinkedLogIDs.Add( LinkedLogID );
+    return true;
+}
+
+bool UCapsaCoreSubsystem::UnregisterLinkedLogID( const FString& LinkedLogID )
+{
+    // Don't link with self.
+    if( LogID.Equals( LinkedLogID ) == true )
+    {
+        return false;
+    }
+
+    if( LinkedLogIDs.Contains( LinkedLogID ) == false )
+    {
+        return false;
+    }
+
+    LinkedLogIDs.Remove( LinkedLogID );
+    return true;
 }
 
 void UCapsaCoreSubsystem::SendLog( TArray<FBufferedLine>& LogBuffer )
@@ -114,12 +154,16 @@ void UCapsaCoreSubsystem::RequestClientAuth()
         return;
     }
 
-    FString AuthURL = CapsaSettings->GetCapsaBaseURL();
-    if( AuthURL.IsEmpty() == true )
+    FString AuthURL = CapsaSettings->GetProtocol();
+    AuthURL.Append( CapsaSettings->GetAPIPrefix() );
+    AuthURL.Append( CapsaSettings->GetCapsaBaseURL() );
+    if( CapsaSettings->GetCapsaBaseURL().IsEmpty() == true )
     {
-        UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::RequestClientAuth | AuthURL is Empty!" ) );
+        UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::RequestClientAuth | Base URL is Empty!" ) );
         return;
     }
+
+    AuthURL.Append( CapsaSettings->GetCapsaURLAPIPath() );
     AuthURL.Append( CapsaSettings->GetCapsaURLAuthSuffix() );
 
     FString AuthContent = TEXT( "{" );
@@ -151,6 +195,22 @@ void UCapsaCoreSubsystem::ClientAuthResponse( FHttpRequestPtr Request, FHttpResp
         LinkWeb = JsonObject->GetStringField( TEXT( "link_web" ) );
         Expiry = JsonObject->GetStringField( TEXT( "expiry" ) );
 
+        // TODO: Change this URL Append to use "link_web" when it is implemented.
+        const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
+        if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
+        {
+            return;
+        }
+
+        FString LogURL = CapsaSettings->GetProtocol();
+        LogURL.Append( CapsaSettings->GetWebPrefix() );
+        LogURL.Append( CapsaSettings->GetCapsaBaseURL() );
+        //LogURL.Append( CapsaSettings->GetCapsaURLLogSuffix() );   // api needs log/ and web needs logs/
+        LogURL.Append( TEXT( "logs/" ) );
+        LogURL.Append( LogID );
+        UE_LOG( LogCapsaCore, Log, TEXT( "Capsa ID: %s | CapsaLogURL: %s" ), *LogID, *LogURL );
+        // TODO_END
+
         return;
     }
 
@@ -166,7 +226,11 @@ void UCapsaCoreSubsystem::RequestSendLog( const FString& Log )
         return;
     }
 
-    FString LogURL = CapsaSettings->GetCapsaBaseURL();
+    FString LogURL = CapsaSettings->GetProtocol();
+    LogURL.Append( CapsaSettings->GetAPIPrefix() );
+    LogURL.Append( CapsaSettings->GetCapsaBaseURL() );
+    LogURL.Append( CapsaSettings->GetCapsaURLAPIPath() );
+    LogURL.Append( CapsaSettings->GetCapsaURLLogSuffix() );
     LogURL.Append( CapsaSettings->GetCapsaURLLogChunkSuffix() );
 
     FString LogAuthHeader = TEXT( "Bearer " );
@@ -185,6 +249,16 @@ void UCapsaCoreSubsystem::RequestSendLog( const FString& Log )
 void UCapsaCoreSubsystem::LogResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
 {
     ProcessResponse( TEXT( "UCapsaCoreSubsystem::LogResponse" ), Request, Response, bSuccess );
+}
+
+void UCapsaCoreSubsystem::RequestSendMetadata()
+{
+    // TODO: Generate Metadata and send HTTP.
+}
+
+void UCapsaCoreSubsystem::MetadataResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
+{
+    ProcessResponse( TEXT( "UCapsaCoreSubsystem::MetadataResponse" ), Request, Response, bSuccess );
 }
 
 TSharedPtr<FJsonObject> UCapsaCoreSubsystem::ProcessResponse( const FString& LogDetails, FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
@@ -224,8 +298,6 @@ TSharedPtr<FJsonObject> UCapsaCoreSubsystem::ProcessResponse( const FString& Log
 
 void UCapsaCoreSubsystem::OnPostWorldInit( UWorld* World, const UWorld::InitializationValues )
 {
-    UE_LOG( LogCapsaCore, Warning, TEXT( "UCapsaCoreSubsystem::OnPostLoadMapWithWorld | Post Map Load..." ) );
-
     if( World == nullptr || World->IsValidLowLevelFast() == false )
     {
         UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::OnPostLoadMapWithWorld | World is Invalid!" ) );
@@ -234,9 +306,6 @@ void UCapsaCoreSubsystem::OnPostWorldInit( UWorld* World, const UWorld::Initiali
 
     if( World->GetNetMode() == NM_Client )
     {
-        // Check for the CapsaActorComponent
-        // If not found, Timer (or Event?)
-        // Once we have a valid one, send OUR CapsaID via the RPC
         return;
     }
 
@@ -258,23 +327,42 @@ void UCapsaCoreSubsystem::OnPostWorldInit( UWorld* World, const UWorld::Initiali
     {
         return;
     }
+    
+    FGameModeEvents::GameModePostLoginEvent.AddUObject( this, &UCapsaCoreSubsystem::OnPlayerLoggedIn );
+    FGameModeEvents::GameModeLogoutEvent.AddUObject( this, &UCapsaCoreSubsystem::OnPlayerLoggedOut );
+}
 
-    // TODO:
-    // Add a Timer to check if the Class exists
-    // Add a failure count (loop count)
-    //
-
-    TArray<AActor*> ActorsToAddComp;
-    UGameplayStatics::GetAllActorsOfClass( World, CapsaSettings->GetAutoAddClass(), ActorsToAddComp );
-
-    if( ActorsToAddComp.IsEmpty() == true )
+void UCapsaCoreSubsystem::OnPlayerLoggedIn( AGameModeBase* GameMode, APlayerController* Player )
+{
+    const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
+    if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
     {
-        UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::OnPostLoadMapWithWorld | Unable to add Capsa Component, no Actors of class %s found." ), *CapsaSettings->GetAutoAddClass()->GetName() );
+        UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::OnPlayerLoggedIn | Failed to load CapsaSettings." ) );
         return;
     }
 
+    TArray<AActor*> ActorsToAddComp;
+    UGameplayStatics::GetAllActorsOfClass( GameMode, CapsaSettings->GetAutoAddClass(), ActorsToAddComp );
+
+    if( ActorsToAddComp.IsEmpty() == true )
+    {
+        UE_LOG( LogCapsaCore, Log, TEXT( "UCapsaCoreSubsystem::OnPlayerLoggedIn | Unable to add Capsa Component, no Actors of class %s found." ), *CapsaSettings->GetAutoAddClass()->GetName() );
+        return;
+    }
+
+    // Once we have a valid one, send OUR CapsaID via the RPC
     for( AActor* Actor : ActorsToAddComp )
     {
+        if( Actor->FindComponentByClass<UCapsaActorComponent>() != nullptr )
+        {
+            // Don't add again, if we already have a UCapsaActorComponent on this class.
+            continue;
+        }
+
         Actor->AddComponentByClass( UCapsaActorComponent::StaticClass(), false, FTransform(), false );
     }
+}
+
+void UCapsaCoreSubsystem::OnPlayerLoggedOut( AGameModeBase* GameMode, AController* Controller )
+{
 }

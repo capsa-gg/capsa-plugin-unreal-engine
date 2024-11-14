@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Logging/LogVerbosity.h"
 
 #include "CapsaCoreFunctionLibrary.generated.h"
 
@@ -35,4 +36,5 @@ public:
 	UFUNCTION( BlueprintPure, Category = "Capsa|Core" )
 	static FString						GetHostTypeString();
 
+	static FString						GetLogVerbosityString( ELogVerbosity::Type Verbosity );
 };

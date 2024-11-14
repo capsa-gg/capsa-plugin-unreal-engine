@@ -32,7 +32,7 @@ void FCapsaOutputDevice::Serialize( const TCHAR* InData, ELogVerbosity::Type Ver
 	}
 
 	FScopeLock ScopeLock( &SynchronizationObject );
-	BufferedLines.Emplace( InData, Category, Verbosity, FPlatformTime::Seconds() );
+	BufferedLines.Emplace( InData, Category, Verbosity, FDateTime::Now().ToUnixTimestampDecimal() );
 }
 
 void FCapsaOutputDevice::Initialize()

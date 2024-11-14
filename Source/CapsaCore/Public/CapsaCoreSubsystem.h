@@ -36,6 +36,29 @@ public:
 	bool								IsAuthenticated() const;
 
 	/**
+	* Returns the LogID of the currently active connection.
+	* 
+	* @param FString The LogID.
+	*/
+	FString								GetLogID() const;
+
+	/**
+	* Attempts to Register the provided Log ID as a Linked Log ID.
+	* 
+	* @param FString The LinkedLogID to try and register.
+	* @return bool True if the ID is valid and not already registered. Otherwise false.
+	*/
+	bool								RegisterLinkedLogID( const FString& LinkedLogID );
+
+	/**
+	* Attempts to Unregister the provided Log ID from the Linked Log IDs.
+	*
+	* @param FString The LinkedLogID to try and unregister.
+	* @return bool True if the ID is valid and already registered. Otherwise false.
+	*/
+	bool								UnregisterLinkedLogID( const FString& LinkedLogID );
+
+	/**
 	* Attempts to send the provided Log Buffer to the Capsa Server.
 	* 
 	* This is performed asynchronously, converted the TArray of BufferedLine's into a single
@@ -62,7 +85,7 @@ protected:
 	* @param Response The FHttpResponsePtr with response information. Payload if successful, error info if not.
 	* @param bSuccess Whether the HTTP response was successful (true) or not (false).
 	*/
-	void								ClientAuthResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
+	virtual void						ClientAuthResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
 
 	/**
 	* Requests to Send a raw Log to the Capsa Server.
@@ -80,7 +103,11 @@ protected:
 	* @param Response The FHttpResponsePtr with response information. Payload if successful, error info if not.
 	* @param bSuccess Whether the HTTP response was successful (true) or not (false).
 	*/
-	void								LogResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
+	virtual void						LogResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
+
+	void								RequestSendMetadata();
+
+	virtual void						MetadataResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
 
 	/**
 	* Generic HTTP response processing function.
@@ -93,7 +120,7 @@ protected:
 	* 
 	* @return TSharedPtr<FJsonObject> The JSON Object if any found. Can be null.
 	*/
-	TSharedPtr<FJsonObject>				ProcessResponse( const FString& LogDetails, FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
+	virtual TSharedPtr<FJsonObject>		ProcessResponse( const FString& LogDetails, FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
 
 	/**
 	* Called after the Map has loaded with the specified World.
@@ -102,16 +129,38 @@ protected:
 	*
 	* @param World The UWorld associated with the Map that has loaded.
 	*/
-	void								OnPostWorldInit( UWorld* World, const UWorld::InitializationValues );
+	virtual void						OnPostWorldInit( UWorld* World, const UWorld::InitializationValues );
 
-	FDelegateHandle						OnPostWorldInitializationHandle;
+	/**
+	* Called after a Player has been successfully Logged in.
+	* Only bound in OnPostWorldInit and only if bAutoAddCapsaComponent is true.
+	* 
+	* @param GameMode The GameMode the player joined.
+	* @param Player The PlayerController for the player that has just joined.
+	*/
+	virtual void						OnPlayerLoggedIn( AGameModeBase* GameMode, APlayerController* Player );
+
+	/**
+	* Called after a Player has been successfully Logged out.
+	* Only bound in OnPostWorldInit and only if bAutoAddCapsaComponent is true.
+	*
+	* @param GameMode The GameMode the player left.
+	* @param Player The Controller for the player that has just left.
+	*/
+	virtual void						OnPlayerLoggedOut( AGameModeBase* GameMode, AController* Controller );
 
 private:
+
+	FDelegateHandle						OnPostWorldInitializationHandle;
 
 	FString								Token;
 	FString								LogID;
 	FString								LinkWeb;
 	FString								Expiry;
+	TSet<FString>						LinkedLogIDs;
+
+	int32								LookForClassLoopCount;
+	FTimerHandle						LookForClassTimerHandle;
 
 };
 

@@ -32,3 +32,26 @@ FString UCapsaCoreFunctionLibrary::GetHostTypeString()
 
 	return HostType;
 }
+
+FString UCapsaCoreFunctionLibrary::GetLogVerbosityString( ELogVerbosity::Type Verbosity )
+{
+	switch( Verbosity )
+	{
+	case ELogVerbosity::Fatal:
+		return TEXT( "Fatal" );
+	case ELogVerbosity::Error:
+		return TEXT( "Error" );
+	case ELogVerbosity::Warning:
+		return TEXT( "Warning" );
+	case ELogVerbosity::Display:
+		return TEXT( "Display" );
+	case ELogVerbosity::Log:
+		return TEXT( "Log" );
+	case ELogVerbosity::Verbose:
+		return TEXT( "Verbose" );
+	case ELogVerbosity::VeryVerbose:
+		return TEXT( "VeryVerbose" );
+	}
+	
+	return TEXT( "Unknown" );
+}
