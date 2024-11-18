@@ -9,7 +9,7 @@
 #include "CapsaCoreSubsystem.generated.h"
 
 // Forward Declarations
-
+class UCapsaActorComponent;
 
 /**
  * 
@@ -24,8 +24,8 @@ public:
 	UCapsaCoreSubsystem();
 
 	// Begin USubsystem
-	virtual void						Initialize( FSubsystemCollectionBase& Collection ) override;
-	virtual void						Deinitialize() override;
+	virtual void							Initialize( FSubsystemCollectionBase& Collection ) override;
+	virtual void							Deinitialize() override;
 	// End USubsystem
 
 	/**
@@ -33,14 +33,14 @@ public:
 	* 
 	* @return bool True if authenticated, otherwise false.
 	*/
-	bool								IsAuthenticated() const;
+	bool									IsAuthenticated() const;
 
 	/**
 	* Returns the LogID of the currently active connection.
 	* 
 	* @param FString The LogID.
 	*/
-	FString								GetLogID() const;
+	FString									GetLogID() const;
 
 	/**
 	* Attempts to Register the provided Log ID as a Linked Log ID.
@@ -48,7 +48,7 @@ public:
 	* @param FString The LinkedLogID to try and register.
 	* @return bool True if the ID is valid and not already registered. Otherwise false.
 	*/
-	bool								RegisterLinkedLogID( const FString& LinkedLogID );
+	bool									RegisterLinkedLogID( const FString& LinkedLogID );
 
 	/**
 	* Attempts to Unregister the provided Log ID from the Linked Log IDs.
@@ -56,7 +56,7 @@ public:
 	* @param FString The LinkedLogID to try and unregister.
 	* @return bool True if the ID is valid and already registered. Otherwise false.
 	*/
-	bool								UnregisterLinkedLogID( const FString& LinkedLogID );
+	bool									UnregisterLinkedLogID( const FString& LinkedLogID );
 
 	/**
 	* Attempts to send the provided Log Buffer to the Capsa Server.
@@ -66,9 +66,29 @@ public:
 	* 
 	* @param LogBuffer The Log buffer to parse and send.
 	*/
-	void								SendLog( TArray<FBufferedLine>& LogBuffer );
+	void									SendLog( TArray<FBufferedLine>& LogBuffer );
+
+	/**
+	* Gets the URL for the Client Log and requests the Operating System launch a Browser
+	* with the corresponding URL.
+	*/
+	static void								OpenClientLogInBrowser();
+
+	/**
+	* Gets the URL for the Server Log and requests the Operating System launch a Browser
+	* with the corresponding URL.
+	*/
+	static void								OpenServerLogInBrowser();
 
 protected:
+
+	/**
+	* Attempts to build a URL to the Capsa server for viewing Logs, using the provided LogID.
+	* 
+	* @param InLogID The LogID to append to the URL.
+	* @return FString The full URL if successful, otherwise empty.
+	*/
+	FString									GetCapsaLogURL( const FString& InLogID );
 
 	/**
 	* Request a Capsa Auth Token.
@@ -76,7 +96,7 @@ protected:
 	* or Engine.ini.
 	* Will call ClientAuthResponse.
 	*/
-	void								RequestClientAuth();
+	void									RequestClientAuth();
 
 	/**
 	* Callback after a ClientAuth request.
@@ -85,7 +105,7 @@ protected:
 	* @param Response The FHttpResponsePtr with response information. Payload if successful, error info if not.
 	* @param bSuccess Whether the HTTP response was successful (true) or not (false).
 	*/
-	virtual void						ClientAuthResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
+	virtual void							ClientAuthResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
 
 	/**
 	* Requests to Send a raw Log to the Capsa Server.
@@ -94,7 +114,7 @@ protected:
 	* 
 	* @param Log The FString log to attempt to send.
 	*/
-	void								RequestSendLog( const FString& Log );
+	void									RequestSendLog( const FString& Log );
 
 	/**
 	* Callback after a SendLog request.
@@ -103,11 +123,18 @@ protected:
 	* @param Response The FHttpResponsePtr with response information. Payload if successful, error info if not.
 	* @param bSuccess Whether the HTTP response was successful (true) or not (false).
 	*/
-	virtual void						LogResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
+	virtual void							LogResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
 
-	void								RequestSendMetadata();
+	void									RequestSendMetadata();
 
-	virtual void						MetadataResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
+	/**
+	* Callback after a SendMetadata request.
+	*
+	* @param Request The FHttpRequestPtr that made the Request.
+	* @param Response The FHttpResponsePtr with response information. Payload if successful, error info if not.
+	* @param bSuccess Whether the HTTP response was successful (true) or not (false).
+	*/
+	virtual void							MetadataResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
 
 	/**
 	* Generic HTTP response processing function.
@@ -120,7 +147,7 @@ protected:
 	* 
 	* @return TSharedPtr<FJsonObject> The JSON Object if any found. Can be null.
 	*/
-	virtual TSharedPtr<FJsonObject>		ProcessResponse( const FString& LogDetails, FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
+	virtual TSharedPtr<FJsonObject>			ProcessResponse( const FString& LogDetails, FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
 
 	/**
 	* Called after the Map has loaded with the specified World.
@@ -129,7 +156,7 @@ protected:
 	*
 	* @param World The UWorld associated with the Map that has loaded.
 	*/
-	virtual void						OnPostWorldInit( UWorld* World, const UWorld::InitializationValues );
+	virtual void							OnPostWorldInit( UWorld* World, const UWorld::InitializationValues );
 
 	/**
 	* Called after a Player has been successfully Logged in.
@@ -138,7 +165,7 @@ protected:
 	* @param GameMode The GameMode the player joined.
 	* @param Player The PlayerController for the player that has just joined.
 	*/
-	virtual void						OnPlayerLoggedIn( AGameModeBase* GameMode, APlayerController* Player );
+	virtual void							OnPlayerLoggedIn( AGameModeBase* GameMode, APlayerController* Player );
 
 	/**
 	* Called after a Player has been successfully Logged out.
@@ -147,20 +174,21 @@ protected:
 	* @param GameMode The GameMode the player left.
 	* @param Player The Controller for the player that has just left.
 	*/
-	virtual void						OnPlayerLoggedOut( AGameModeBase* GameMode, AController* Controller );
+	virtual void							OnPlayerLoggedOut( AGameModeBase* GameMode, AController* Controller );
 
 private:
 
-	FDelegateHandle						OnPostWorldInitializationHandle;
+	static void								OpenBrowser( FString URL );
 
-	FString								Token;
-	FString								LogID;
-	FString								LinkWeb;
-	FString								Expiry;
-	TSet<FString>						LinkedLogIDs;
+	FDelegateHandle							OnPostWorldInitializationHandle;
 
-	int32								LookForClassLoopCount;
-	FTimerHandle						LookForClassTimerHandle;
+	FString									Token;
+	FString									LogID;
+	FString									LinkWeb;
+	FString									Expiry;
+	TSet<FString>							LinkedLogIDs;
+
+	TWeakObjectPtr<UCapsaActorComponent>	CapsaActorComponent;
 
 };
 

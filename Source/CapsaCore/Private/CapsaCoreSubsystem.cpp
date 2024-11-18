@@ -64,7 +64,7 @@ UCapsaCoreSubsystem::UCapsaCoreSubsystem()
     , LogID( "" )
     , LinkWeb( "" )
     , Expiry( "" )
-    , LookForClassLoopCount( 0 )
+    , CapsaActorComponent( nullptr )
 {
 }
 
@@ -145,6 +145,24 @@ void UCapsaCoreSubsystem::SendLog( TArray<FBufferedLine>& LogBuffer )
     ( new FAutoDeleteAsyncTask<FMakeStringFromBufferTask>( MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
 }
 
+FString UCapsaCoreSubsystem::GetCapsaLogURL( const FString& InLogID )
+{
+    const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
+    if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
+    {
+        return "";
+    }
+
+    FString LogURL = CapsaSettings->GetProtocol();
+    LogURL.Append( CapsaSettings->GetWebPrefix() );
+    LogURL.Append( CapsaSettings->GetCapsaBaseURL() );
+    //LogURL.Append( CapsaSettings->GetCapsaURLLogSuffix() );   // api needs log/ and web needs logs/
+    LogURL.Append( TEXT( "logs/" ) );
+    LogURL.Append( InLogID );
+
+    return LogURL;
+}
+
 void UCapsaCoreSubsystem::RequestClientAuth()
 {
     const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
@@ -196,18 +214,7 @@ void UCapsaCoreSubsystem::ClientAuthResponse( FHttpRequestPtr Request, FHttpResp
         Expiry = JsonObject->GetStringField( TEXT( "expiry" ) );
 
         // TODO: Change this URL Append to use "link_web" when it is implemented.
-        const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
-        if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
-        {
-            return;
-        }
-
-        FString LogURL = CapsaSettings->GetProtocol();
-        LogURL.Append( CapsaSettings->GetWebPrefix() );
-        LogURL.Append( CapsaSettings->GetCapsaBaseURL() );
-        //LogURL.Append( CapsaSettings->GetCapsaURLLogSuffix() );   // api needs log/ and web needs logs/
-        LogURL.Append( TEXT( "logs/" ) );
-        LogURL.Append( LogID );
+        FString LogURL = GetCapsaLogURL( LogID );
         UE_LOG( LogCapsaCore, Log, TEXT( "Capsa ID: %s | CapsaLogURL: %s" ), *LogID, *LogURL );
         // TODO_END
 
@@ -359,10 +366,68 @@ void UCapsaCoreSubsystem::OnPlayerLoggedIn( AGameModeBase* GameMode, APlayerCont
             continue;
         }
 
-        Actor->AddComponentByClass( UCapsaActorComponent::StaticClass(), false, FTransform(), false );
+        UActorComponent* ActorComponent = Actor->AddComponentByClass( UCapsaActorComponent::StaticClass(), false, FTransform(), false );
+        if( CapsaActorComponent.IsValid() == false )
+        {
+            // Store a Weak Reference to the first made Actor Component.
+            CapsaActorComponent = Cast<UCapsaActorComponent>( ActorComponent );
+        }
     }
 }
 
 void UCapsaCoreSubsystem::OnPlayerLoggedOut( AGameModeBase* GameMode, AController* Controller )
 {
 }
+
+void UCapsaCoreSubsystem::OpenClientLogInBrowser()
+{
+    UCapsaCoreSubsystem* CapsaCore = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
+
+    if( CapsaCore == nullptr || CapsaCore->IsValidLowLevelFast() == false )
+    {
+        UE_LOG( LogCapsaCore, Error, TEXT( "Unable to open Client Log in Browser: CapsaCore Subsystem is invalid." ) );
+        return;
+    }
+
+    FString LogURL = CapsaCore->GetCapsaLogURL( CapsaCore->GetLogID() );
+    UCapsaCoreSubsystem::OpenBrowser( LogURL );
+}
+
+void UCapsaCoreSubsystem::OpenServerLogInBrowser()
+{
+    UCapsaCoreSubsystem* CapsaCore = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
+
+    if( CapsaCore == nullptr || CapsaCore->IsValidLowLevelFast() == false )
+    {
+        UE_LOG( LogCapsaCore, Error, TEXT( "Unable to open Server Log in Browser: CapsaCore Subsystem is invalid." ) );
+        return;
+    }
+
+    if( CapsaCore->CapsaActorComponent.IsValid() == false )
+    {
+        UE_LOG( LogCapsaCore, Error, TEXT( "Unable to open Server Log in Browser: Unable to GET Server LogID." ) );
+        return;
+    }
+
+    FString LogURL = CapsaCore->GetCapsaLogURL( CapsaCore->CapsaActorComponent->CapsaServerId );
+    UCapsaCoreSubsystem::OpenBrowser( LogURL );
+}
+
+void UCapsaCoreSubsystem::OpenBrowser( FString URL )
+{
+    FPlatformProcess::LaunchURL( *URL, NULL, NULL );
+}
+
+static FAutoConsoleCommand CVarCapsaViewClientLog(
+    TEXT( "Capsa.ViewClientLog" ),
+    TEXT( "Requests the Operating System to open the default browser " )
+    TEXT( "and open the Capsa Log URL for the current session." ),
+    FConsoleCommandDelegate::CreateStatic( UCapsaCoreSubsystem::OpenClientLogInBrowser ),
+    ECVF_Cheat );
+
+static FAutoConsoleCommand CVarCapsaViewServerLog(
+    TEXT( "Capsa.ViewServerLog" ),
+    TEXT( "Requests the Operating System to open the default browser " )
+    TEXT( "and open the Capsa Log URL for the connected server in the current session." ),
+    FConsoleCommandDelegate::CreateStatic( UCapsaCoreSubsystem::OpenServerLogInBrowser ),
+    ECVF_Cheat );
