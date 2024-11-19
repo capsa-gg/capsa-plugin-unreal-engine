@@ -2,6 +2,7 @@
 
 #include "CapsaCoreSubsystem.h"
 #include "CapsaCore.h"
+#include "CapsaCoreAsync.h"
 #include "Components/CapsaActorComponent.h"
 #include "FunctionLibrary/CapsaCoreFunctionLibrary.h"
 #include "Settings/CapsaSettings.h"
@@ -11,51 +12,6 @@
 
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/GameModeBase.h"
-
-
-/**
-* Async task to create a FString that we can send over HTTP
-* from a FBufferredLine TArray.
-*/
-class FMakeStringFromBufferTask : public FNonAbandonableTask
-{
-public:
-    friend class FAutoDeleteAsyncTask<FMakeStringFromBufferTask>;
-
-    FMakeStringFromBufferTask( TArray<FBufferedLine> InBuffer, FAsyncStringFromBufferCallback InCallbackFunction )
-        : Buffer( MoveTemp(InBuffer) )
-        , CallbackFunction( InCallbackFunction )
-    {
-    }
-
-    void DoWork()
-    {
-        FString Log;
-        for( const FBufferedLine& Line : Buffer )
-        {
-            // Construct the Time from the Seconds when the Line was added
-            FDateTime Time = FDateTime::FromUnixTimestampDecimal( Line.Time );
-            FWideStringBuilderBase TimeStamp;
-            // format: yyyy.mm.dd-hh.mm.ss:mil
-            Log.Append( FString::Printf( TEXT( "[%s]" ), *Time.ToString( TEXT( "%Y.%m.%d-%H.%M.%S.%s" ) ) ) );
-            Log.Append( FString::Printf( TEXT( "[%s]" ), *UCapsaCoreFunctionLibrary::GetLogVerbosityString( Line.Verbosity ) ) );
-            Log.Append( FString::Printf( TEXT( "[%s]: " ), *Line.Category.Resolve().ToString() ) );
-            Log.Append( Line.Data.Get() );
-            Log.Append( LINE_TERMINATOR_ANSI );
-        }
-
-        CallbackFunction( Log );
-    }
-
-    FORCEINLINE TStatId GetStatId() const
-    {
-        RETURN_QUICK_DECLARE_CYCLE_STAT( FMakeStringFromBufferTask, STATGROUP_ThreadPoolAsyncTasks );
-    }
-
-private:
-    TArray<FBufferedLine>           Buffer;
-    FAsyncStringFromBufferCallback  CallbackFunction;
-};
 
 
 
@@ -142,7 +98,12 @@ void UCapsaCoreSubsystem::SendLog( TArray<FBufferedLine>& LogBuffer )
         {
             RequestSendLog( Log );
         };
-    ( new FAutoDeleteAsyncTask<FMakeStringFromBufferTask>( MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
+    // Example AsyncTask to simply generate a Log from Buffer and fire the Callback.
+    //( new FAutoDeleteAsyncTask<FMakeStringFromBufferTask>( MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
+    // Example AsyncTask to attempt to LOAD the file from the LogID (as filename), whether compressed or not, then fire the Callback.
+    //( new FAutoDeleteAsyncTask<FLoadStringFromFileTask>( LogID, true, MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
+    // Example AsyncTask to attempt to SAVE the file using the LogID (as filename), whether compressed or not, then fire the Callback.
+    ( new FAutoDeleteAsyncTask<FSaveStringFromBufferTask>( LogID, true, MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
 }
 
 FString UCapsaCoreSubsystem::GetCapsaLogURL( const FString& InLogID )
