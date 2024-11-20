@@ -134,6 +134,11 @@ protected:
 	*/
 	virtual void							LogResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
 
+	/**
+	* Generates Capsa supported Metadata and requests to send to the Capsa Server.
+	* Internally constructs the URL from the Config settings and uses the LinkedLogIDs TSet acquired from
+	* Un/RegisterLinkedLogID.
+	*/
 	void									RequestSendMetadata();
 
 	/**

@@ -72,6 +72,7 @@ bool UCapsaCoreSubsystem::RegisterLinkedLogID( const FString& LinkedLogID )
     }
 
     LinkedLogIDs.Add( LinkedLogID );
+    RequestSendMetadata();
     return true;
 }
 
@@ -89,6 +90,12 @@ bool UCapsaCoreSubsystem::UnregisterLinkedLogID( const FString& LinkedLogID )
     }
 
     LinkedLogIDs.Remove( LinkedLogID );
+    
+    if( LinkedLogIDs.IsEmpty() == false )
+    {
+        RequestSendMetadata();
+    }
+
     return true;
 }
 
@@ -166,14 +173,13 @@ void UCapsaCoreSubsystem::RequestClientAuth()
     AuthURL.Append( CapsaSettings->GetCapsaURLAPIPath() );
     AuthURL.Append( CapsaSettings->GetCapsaURLAuthSuffix() );
 
-    FString AuthContent = TEXT( "{" );
-    AuthContent.Append( TEXT( "\"key\":\"" ) );
-    AuthContent.Append( CapsaSettings->GetCapsaAuthKey() );
-    AuthContent.Append( TEXT( "\",\"platform\":\"" ) );
-    AuthContent.Append( UCapsaCoreFunctionLibrary::GetPlatformString() );
-    AuthContent.Append( TEXT( "\",\"type\":\"" ) );
-    AuthContent.Append( UCapsaCoreFunctionLibrary::GetHostTypeString() );
-    AuthContent.Append( TEXT( "\"}" ) );
+    TSharedPtr<FJsonObject> JsonObject = MakeShareable( new FJsonObject );
+    JsonObject->SetStringField( TEXT( "key" ), CapsaSettings->GetCapsaAuthKey() );
+    JsonObject->SetStringField( TEXT( "platform" ), UCapsaCoreFunctionLibrary::GetPlatformString() );
+    JsonObject->SetStringField( TEXT( "type" ), UCapsaCoreFunctionLibrary::GetHostTypeString() );
+    FString AuthContent;
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create( &AuthContent, 0 );
+    FJsonSerializer::Serialize( JsonObject.ToSharedRef(), Writer );
 
     FHttpRequestRef ClientAuthRequest = FHttpModule::Get().CreateRequest();
     ClientAuthRequest->SetURL( AuthURL );
@@ -271,7 +277,49 @@ void UCapsaCoreSubsystem::LogResponse( FHttpRequestPtr Request, FHttpResponsePtr
 
 void UCapsaCoreSubsystem::RequestSendMetadata()
 {
-    // TODO: Generate Metadata and send HTTP.
+    const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
+    if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
+    {
+        UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::RequestSendMetadata | Failed to load CapsaSettings." ) );
+        return;
+    }
+
+    FString LogURL = CapsaSettings->GetProtocol();
+    LogURL.Append( CapsaSettings->GetAPIPrefix() );
+    LogURL.Append( CapsaSettings->GetCapsaBaseURL() );
+    LogURL.Append( CapsaSettings->GetCapsaURLAPIPath() );
+    LogURL.Append( CapsaSettings->GetCapsaURLLogSuffix() );
+    LogURL.Append( CapsaSettings->GetCapsaURLLogMetadataSuffix() );
+
+    FString LogAuthHeader = TEXT( "Bearer " );
+    LogAuthHeader.Append( Token );
+
+    FHttpRequestRef LogRequest = FHttpModule::Get().CreateRequest();
+    LogRequest->SetURL( LogURL );
+    LogRequest->SetVerb( "POST" );
+    LogRequest->SetHeader( "Authorization", LogAuthHeader );
+    LogRequest->AppendToHeader( "Content-Type", "application/json" );
+    
+    TSharedPtr<FJsonObject> JsonObject = MakeShareable( new FJsonObject );
+    TArray<TSharedPtr<FJsonValue>> LinkedLogs;
+    for( FString LinkedLogID : LinkedLogIDs )
+    {
+        TSharedPtr<FJsonValueString> JsonLinkedLogID = MakeShareable( new FJsonValueString( LinkedLogID ) );
+        LinkedLogs.Add( JsonLinkedLogID );
+    }
+    JsonObject->SetArrayField( TEXT( "log_links" ), LinkedLogs );
+    
+    TArray<TSharedPtr<FJsonValue>> AdditionalMetadata;
+    // Loop/Add Metadata
+    JsonObject->SetArrayField( TEXT( "additional_metadata" ), AdditionalMetadata );
+    
+    FString MetadataContent;
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create( &MetadataContent, 0 );
+    FJsonSerializer::Serialize( JsonObject.ToSharedRef(), Writer );
+    
+    LogRequest->SetContentAsString( MetadataContent );
+    LogRequest->OnProcessRequestComplete().BindUObject( this, &UCapsaCoreSubsystem::LogResponse );
+    LogRequest->ProcessRequest();
 }
 
 void UCapsaCoreSubsystem::MetadataResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
