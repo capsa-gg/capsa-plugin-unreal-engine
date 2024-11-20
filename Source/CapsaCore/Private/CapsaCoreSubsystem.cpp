@@ -94,16 +94,37 @@ bool UCapsaCoreSubsystem::UnregisterLinkedLogID( const FString& LinkedLogID )
 
 void UCapsaCoreSubsystem::SendLog( TArray<FBufferedLine>& LogBuffer )
 {
-    FAsyncStringFromBufferCallback CallbackFunc = [this]( const FString& Log )
-        {
-            RequestSendLog( Log );
-        };
-    // Example AsyncTask to simply generate a Log from Buffer and fire the Callback.
-    //( new FAutoDeleteAsyncTask<FMakeStringFromBufferTask>( MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
-    // Example AsyncTask to attempt to LOAD the file from the LogID (as filename), whether compressed or not, then fire the Callback.
-    //( new FAutoDeleteAsyncTask<FLoadStringFromFileTask>( LogID, true, MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
-    // Example AsyncTask to attempt to SAVE the file using the LogID (as filename), whether compressed or not, then fire the Callback.
-    ( new FAutoDeleteAsyncTask<FSaveStringFromBufferTask>( LogID, true, MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
+    const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
+    if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
+    {
+        UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::SendLog | Failed to load CapsaSettings." ) );
+        return;
+    }
+
+    if( CapsaSettings->GetUseCompression() == true )
+    {
+        FAsyncBinaryFromBufferCallback CallbackFunc = [this]( const TArray<uint8>& CompressedLog )
+            {
+                RequestSendCompressedLog( CompressedLog );
+            };
+        // Example AsyncTask to attempt to SAVE the file using the LogID (as filename), whether compressed or not, then fire the Callback.
+        // This requires a Binary Callback, not an FString
+        ( new FAutoDeleteAsyncTask<FSaveCompressedStringFromBufferTask>( LogID, CapsaSettings->GetWriteToDisk(), MoveTemp(LogBuffer), CallbackFunc) )->StartBackgroundTask();
+    }
+    else
+    {
+        FAsyncStringFromBufferCallback CallbackFunc = [this]( const FString& Log )
+            {
+                RequestSendLog( Log );
+            };
+        // These all require an FString Callback.
+        // Example AsyncTask to simply generate a Log from Buffer and fire the Callback.
+        //( new FAutoDeleteAsyncTask<FMakeStringFromBufferTask>( MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
+        // Example AsyncTask to generate a Log and Optionally write it to Disk, then fire the Callback.
+        ( new FAutoDeleteAsyncTask< FSaveStringFromBufferTask>( LogID, CapsaSettings->GetWriteToDisk(), MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
+        // Example AsyncTask to attempt to LOAD the file from the LogID (as filename), whether compressed or not, then fire the Callback.
+        //( new FAutoDeleteAsyncTask<FLoadStringFromFileTask>( LogID, true, MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
+    }
 }
 
 FString UCapsaCoreSubsystem::GetCapsaLogURL( const FString& InLogID )
@@ -210,6 +231,35 @@ void UCapsaCoreSubsystem::RequestSendLog( const FString& Log )
     LogRequest->SetHeader( "Authorization", LogAuthHeader );
     LogRequest->AppendToHeader( "Content-Type", "text/plain" );
     LogRequest->SetContentAsString( Log );
+    LogRequest->OnProcessRequestComplete().BindUObject( this, &UCapsaCoreSubsystem::LogResponse );
+    LogRequest->ProcessRequest();
+}
+
+void UCapsaCoreSubsystem::RequestSendCompressedLog( const TArray<uint8>& CompressedLog )
+{
+    const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
+    if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
+    {
+        UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::RequestSendCompressedLog | Failed to load CapsaSettings." ) );
+        return;
+    }
+
+    FString LogURL = CapsaSettings->GetProtocol();
+    LogURL.Append( CapsaSettings->GetAPIPrefix() );
+    LogURL.Append( CapsaSettings->GetCapsaBaseURL() );
+    LogURL.Append( CapsaSettings->GetCapsaURLAPIPath() );
+    LogURL.Append( CapsaSettings->GetCapsaURLCompressedLogSuffix() );
+    LogURL.Append( CapsaSettings->GetCapsaURLLogChunkSuffix() );
+
+    FString LogAuthHeader = TEXT( "Bearer " );
+    LogAuthHeader.Append( Token );
+
+    FHttpRequestRef LogRequest = FHttpModule::Get().CreateRequest();
+    LogRequest->SetURL( LogURL );
+    LogRequest->SetVerb( "POST" );
+    LogRequest->SetHeader( "Authorization", LogAuthHeader );
+    LogRequest->AppendToHeader( "Content-Type", "application/octet-stream" );
+    LogRequest->SetContent( CompressedLog );
     LogRequest->OnProcessRequestComplete().BindUObject( this, &UCapsaCoreSubsystem::LogResponse );
     LogRequest->ProcessRequest();
 }

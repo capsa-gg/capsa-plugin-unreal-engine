@@ -7,17 +7,22 @@
 #include "Serialization/ArchiveLoadCompressedProxy.h"
 
 
+typedef TFunction<void( const FString& )> FAsyncStringFromBufferCallback;
+typedef TFunction<void( const TArray<uint8>& )> FAsyncBinaryFromBufferCallback;
+
+
 /**
 * Base Capsa Async Task.
 * Stores the Buffer and Callback function. Also contains base helper methods like
 * those to construct a single Log String from the Buffer.
 */
+template <typename CallbackType>
 class FCapsaAsyncTask : public FNonAbandonableTask
 {
 public:
     friend class FAutoDeleteAsyncTask<FCapsaAsyncTask>;
 
-    FCapsaAsyncTask( TArray<FBufferedLine> InBuffer, FAsyncStringFromBufferCallback InCallbackFunction )
+    FCapsaAsyncTask( TArray<FBufferedLine> InBuffer, CallbackType InCallbackFunction )
         : Buffer( MoveTemp( InBuffer ) )
         , CallbackFunction( InCallbackFunction )
         , LogExtension( TEXT( ".Log" ) )
@@ -161,7 +166,7 @@ public:
 protected:
 
     TArray<FBufferedLine>           Buffer;
-    FAsyncStringFromBufferCallback  CallbackFunction;
+    CallbackType                    CallbackFunction;
     const FString                   LogExtension;
     const FString                   CompressedExtension;
 };
@@ -171,13 +176,13 @@ protected:
 * Async task to create a FString that we can send over HTTP
 * from a FBufferredLine TArray.
 */
-class FMakeStringFromBufferTask : public FCapsaAsyncTask
+class FMakeStringFromBufferTask : public FCapsaAsyncTask<FAsyncStringFromBufferCallback>
 {
 public:
     friend class FAutoDeleteAsyncTask<FMakeStringFromBufferTask>;
 
     FMakeStringFromBufferTask( TArray<FBufferedLine> InBuffer, FAsyncStringFromBufferCallback InCallbackFunction )
-        : FCapsaAsyncTask( MoveTemp( InBuffer ), InCallbackFunction )
+        : FCapsaAsyncTask<FAsyncStringFromBufferCallback>( MoveTemp( InBuffer ), InCallbackFunction )
     {
     }
 
@@ -196,31 +201,24 @@ public:
 /**
 * Async task to create a FString that we can send over HTTP
 * from a FBufferredLine TArray.
-* And then save this FString to File. If bInCompress is true, will
-* use GZip, ZLib or Oodle compression and write the archive to file.
+* And then save this Raw String to File.
 */
-class FSaveStringFromBufferTask : public FCapsaAsyncTask
+class FSaveStringFromBufferTask : public FCapsaAsyncTask<FAsyncStringFromBufferCallback>
 {
 public:
     friend class FAutoDeleteAsyncTask<FSaveStringFromBufferTask>;
 
-    FSaveStringFromBufferTask( FString InLogID, bool bInCompress, TArray<FBufferedLine> InBuffer, FAsyncStringFromBufferCallback InCallbackFunction )
-        : FCapsaAsyncTask( MoveTemp( InBuffer ), InCallbackFunction )
+    FSaveStringFromBufferTask( FString InLogID, bool bInWriteToDisk, TArray<FBufferedLine> InBuffer, FAsyncStringFromBufferCallback InCallbackFunction )
+        : FCapsaAsyncTask<FAsyncStringFromBufferCallback>( MoveTemp( InBuffer ), InCallbackFunction )
         , LogID( InLogID )
-        , bCompress( bInCompress )
+        , bWriteToDisk( bInWriteToDisk )
     {
     }
 
     void                            DoWork()
     {
         FString Log = MakeLogString();
-        if( bCompress == true )
-        {
-            TArray<uint8> CompressedLog;
-            MakeCompressedLogBinary( CompressedLog );
-            SaveBinaryToFile( CompressedLog, LogID );
-        }
-        else
+        if( bWriteToDisk == true )
         {
             SaveStringToFile( Log, LogID );
         }
@@ -235,7 +233,47 @@ public:
 protected:
 
     FString                         LogID;
-    bool                            bCompress;
+    bool                            bWriteToDisk;
+};
+
+/**
+* Async task to create a Binary Array that we can send over HTTP
+* from a FBufferredLine TArray.
+* And then save this compressed Binary Array to File.
+*/
+class FSaveCompressedStringFromBufferTask : public FCapsaAsyncTask<FAsyncBinaryFromBufferCallback>
+{
+public:
+    friend class FAutoDeleteAsyncTask<FSaveCompressedStringFromBufferTask>;
+
+    FSaveCompressedStringFromBufferTask( FString InLogID, bool bInWriteToDisk, TArray<FBufferedLine> InBuffer, FAsyncBinaryFromBufferCallback InCallbackFunction )
+        : FCapsaAsyncTask( MoveTemp( InBuffer ), InCallbackFunction )
+        , LogID( InLogID )
+        , bWriteToDisk( bInWriteToDisk )
+    {
+    }
+
+    void                            DoWork()
+    {
+        TArray<uint8> CompressedLog;
+        MakeCompressedLogBinary( CompressedLog );
+        if( bWriteToDisk == true )
+        {
+            SaveBinaryToFile( CompressedLog, LogID );
+        }
+        
+        CallbackFunction( CompressedLog );
+    }
+
+    FORCEINLINE TStatId             GetStatId() const
+    {
+        RETURN_QUICK_DECLARE_CYCLE_STAT( FSaveCompressedStringFromBufferTask, STATGROUP_ThreadPoolAsyncTasks );
+    }
+
+protected:
+
+    FString                         LogID;
+    bool                            bWriteToDisk;
 };
 
 /**
@@ -244,7 +282,7 @@ protected:
 * If bInCompress is true, will use GZip, ZLib or Oodle decompression 
 * and read the archive from file.
 */
-class FLoadStringFromFileTask : public FCapsaAsyncTask
+class FLoadStringFromFileTask : public FCapsaAsyncTask<FAsyncStringFromBufferCallback>
 {
 public:
     friend class FAutoDeleteAsyncTask<FLoadStringFromFileTask>;

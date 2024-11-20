@@ -117,6 +117,15 @@ protected:
 	void									RequestSendLog( const FString& Log );
 
 	/**
+	* Requests to Send a Compressed Log to the Capsa Server.
+	* Internally constructs the URL from the Config settings and uses the Auth token acquired from
+	* RequestClientAuth().
+	*
+	* @param CompressedLog The TArray<uint8> binary log to attempt to send.
+	*/
+	void									RequestSendCompressedLog( const TArray<uint8>& CompressedLog );
+
+	/**
 	* Callback after a SendLog request.
 	*
 	* @param Request The FHttpRequestPtr that made the Request.
@@ -191,5 +200,3 @@ private:
 	TWeakObjectPtr<UCapsaActorComponent>	CapsaActorComponent;
 
 };
-
-typedef TFunction<void( const FString& )> FAsyncStringFromBufferCallback;

@@ -14,11 +14,14 @@ UCapsaSettings::UCapsaSettings()
 	, CapsaURLAPIPath( "" )
 	, CapsaURLAuthSuffix( "auth" )
 	, CapsaURLLogSuffix( "log/" )
+	, CapsaURLCompressedLogSuffix( "clog/" )
 	, CapsaURLLogMetadataSuffix( "metadata" )
 	, CapsaURLLogChunkSuffix( "chunk" )
 	, LogTickRate( 1.f )
 	, MaxTimeBetweenLogFlushes( 10.f )
 	, MaxLogLinesBetweenLogFlushes( 100 )
+	, bUseCompression( true )
+	, bWriteToDisk( true )
 	, bAutoAddCapsaComponent( true )
 	, AutoAddClass( APlayerState::StaticClass() )
 	, LookForClassTime( 1.f )
@@ -54,6 +57,16 @@ float UCapsaSettings::GetMaxTimeBetweenLogFlushes() const
 int32 UCapsaSettings::GetMaxLogLinesBetweenLogFlushes() const
 {
 	return MaxLogLinesBetweenLogFlushes;
+}
+
+bool UCapsaSettings::GetUseCompression() const
+{
+	return bUseCompression;
+}
+
+bool UCapsaSettings::GetWriteToDisk() const
+{
+	return bWriteToDisk;
 }
 
 bool UCapsaSettings::GetShouldAutoAddCapsaComponent() const
@@ -99,6 +112,11 @@ FString UCapsaSettings::GetCapsaURLAuthSuffix() const
 FString UCapsaSettings::GetCapsaURLLogSuffix() const
 {
 	return CapsaURLLogSuffix;
+}
+
+FString UCapsaSettings::GetCapsaURLCompressedLogSuffix() const
+{
+	return CapsaURLCompressedLogSuffix;
 }
 
 FString UCapsaSettings::GetCapsaURLLogMetadataSuffix() const

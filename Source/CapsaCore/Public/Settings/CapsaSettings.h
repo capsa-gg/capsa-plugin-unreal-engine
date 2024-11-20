@@ -85,6 +85,15 @@ public:
 	FString							GetCapsaURLLogSuffix() const;
 
 	/**
+	* Get the suffix to append to the Capsa Base URL to generate the Compressed Log URL.
+	* A LogID will be appended after this, provided a successful Auth request has been made.
+	*
+	* @return FString The Capsa URL Compressed Log Suffix.
+	*/
+	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
+	FString							GetCapsaURLCompressedLogSuffix() const;
+
+	/**
 	* Get the suffix to append to the Capsa Base URL to generate the full Log Metadata URL.
 	*
 	* @return FString The Capsa URL Log Metadata Suffix.
@@ -123,6 +132,22 @@ public:
 	*/
 	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
 	int32							GetMaxLogLinesBetweenLogFlushes() const;
+
+	/**
+	* Get whether using Compression or not.
+	*
+	* @return bool Use compression (true) or FString (false).
+	*/
+	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
+	bool							GetUseCompression() const;
+
+	/**
+	* Get whether write Log to disk.
+	*
+	* @return bool Write to disk (true) or not (false).
+	*/
+	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
+	bool							GetWriteToDisk() const;
 #pragma endregion LOG_FUNCTIONS
 
 #pragma region COMPONENT_FUNCTIONS
@@ -215,6 +240,13 @@ protected:
 	FString							CapsaURLLogSuffix;
 
 	/**
+	* The suffix to add to the CapsaBaseURL to generate the Compressed Log Path.
+	* A LogID will be appended to this, after a valid Auth request.
+	*/
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log", meta = ( DisplayName = "Capsa URL Compressed Log Suffix" ) )
+	FString							CapsaURLCompressedLogSuffix;
+
+	/**
 	* The suffix to add to the CapsaBaseURL to generate the full Metadata URL.
 	*/
 	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log", meta = ( DisplayName = "Capsa URL Log Metadata Suffix" ) )
@@ -243,6 +275,18 @@ protected:
 	*/
 	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log" )
 	int32							MaxLogLinesBetweenLogFlushes;
+
+	/**
+	* Whether we should use Compression (true) or raw FString (false) when sending logs.
+	*/
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log" )
+	bool							bUseCompression;
+
+	/**
+	* Whether we should write the Log to disk.
+	*/
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log" )
+	bool							bWriteToDisk;
 #pragma endregion LOG_PROPERTIES
 
 #pragma region COMPONENT_PROPERTIES
