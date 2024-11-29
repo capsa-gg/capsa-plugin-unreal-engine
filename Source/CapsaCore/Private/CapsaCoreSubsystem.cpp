@@ -254,7 +254,7 @@ void UCapsaCoreSubsystem::RequestSendCompressedLog( const TArray<uint8>& Compres
     LogURL.Append( CapsaSettings->GetAPIPrefix() );
     LogURL.Append( CapsaSettings->GetCapsaBaseURL() );
     LogURL.Append( CapsaSettings->GetCapsaURLAPIPath() );
-    LogURL.Append( CapsaSettings->GetCapsaURLCompressedLogSuffix() );
+    LogURL.Append( CapsaSettings->GetCapsaURLLogSuffix() );
     LogURL.Append( CapsaSettings->GetCapsaURLLogChunkSuffix() );
 
     FString LogAuthHeader = TEXT( "Bearer " );

@@ -14,7 +14,6 @@ UCapsaSettings::UCapsaSettings()
 	, CapsaURLAPIPath( "" )
 	, CapsaURLAuthSuffix( "auth" )
 	, CapsaURLLogSuffix( "log/" )
-	, CapsaURLCompressedLogSuffix( "clog/" )
 	, CapsaURLLogMetadataSuffix( "metadata" )
 	, CapsaURLLogChunkSuffix( "chunk" )
 	, LogTickRate( 1.f )
@@ -112,11 +111,6 @@ FString UCapsaSettings::GetCapsaURLAuthSuffix() const
 FString UCapsaSettings::GetCapsaURLLogSuffix() const
 {
 	return CapsaURLLogSuffix;
-}
-
-FString UCapsaSettings::GetCapsaURLCompressedLogSuffix() const
-{
-	return CapsaURLCompressedLogSuffix;
 }
 
 FString UCapsaSettings::GetCapsaURLLogMetadataSuffix() const

@@ -85,15 +85,6 @@ public:
 	FString							GetCapsaURLLogSuffix() const;
 
 	/**
-	* Get the suffix to append to the Capsa Base URL to generate the Compressed Log URL.
-	* A LogID will be appended after this, provided a successful Auth request has been made.
-	*
-	* @return FString The Capsa URL Compressed Log Suffix.
-	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
-	FString							GetCapsaURLCompressedLogSuffix() const;
-
-	/**
 	* Get the suffix to append to the Capsa Base URL to generate the full Log Metadata URL.
 	*
 	* @return FString The Capsa URL Log Metadata Suffix.
@@ -238,13 +229,6 @@ protected:
 	*/
 	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log", meta = ( DisplayName = "Capsa URL Log Suffix" ) )
 	FString							CapsaURLLogSuffix;
-
-	/**
-	* The suffix to add to the CapsaBaseURL to generate the Compressed Log Path.
-	* A LogID will be appended to this, after a valid Auth request.
-	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log", meta = ( DisplayName = "Capsa URL Compressed Log Suffix" ) )
-	FString							CapsaURLCompressedLogSuffix;
 
 	/**
 	* The suffix to add to the CapsaBaseURL to generate the full Metadata URL.
