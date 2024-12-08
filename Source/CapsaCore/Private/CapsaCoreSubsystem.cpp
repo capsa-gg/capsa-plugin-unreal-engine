@@ -286,37 +286,26 @@ void UCapsaCoreSubsystem::MetadataResponse( FHttpRequestPtr Request, FHttpRespon
     ProcessResponse( TEXT( "UCapsaCoreSubsystem::MetadataResponse" ), Request, Response, bSuccess );
 }
 
-TSharedPtr<FJsonObject> UCapsaCoreSubsystem::ProcessResponse( const FString& LogDetails, FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
+TSharedPtr<FJsonObject> UCapsaCoreSubsystem::ProcessResponse( const FString& RequestName, FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
 {
-    try
+    // Exit early if request failed
+    if (!bSuccess == true)
     {
-        if( bSuccess == true )
-        {
-            // Deserialize the JSON
-            TSharedPtr<FJsonObject> JsonObject = MakeShareable( new FJsonObject );
-            TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create( Response->GetContentAsString() );
+        UE_LOG(LogCapsaCore, Error, TEXT("%s | HTTP Request Failed: %s."), *RequestName, (Response == nullptr || Response.IsValid() == false) ? TEXT("Invalid Response Ptr") : *Response->GetContentAsString());
 
-            try
-            {
-                if( FJsonSerializer::Deserialize( Reader, JsonObject ) == true )
-                {
-                    return JsonObject;
-                }
-            }
-            catch( ... )
-            {
-                //UE_LOG( LogCapsaCore, Error, TEXT( "%s | Failed to Deserialize JSON" ), *LogDetails );
-            }
-        }
-        else
-        {
-            UE_LOG( LogCapsaCore, Error, TEXT( "%s | HTTP Request Failed: %s." ), *LogDetails, ( Response == nullptr || Response.IsValid() == false ) ? TEXT( "Invalid Response Ptr" ) : *Response->GetContentAsString() );
-        }
+        return nullptr;
     }
-    catch( ... )
+
+    // Deserialize the JSON
+    TSharedPtr<FJsonObject> JsonObject = MakeShareable( new FJsonObject );
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create( Response->GetContentAsString() );
+
+    if( FJsonSerializer::Deserialize( Reader, JsonObject ) == true )
     {
-        UE_LOG( LogCapsaCore, Error, TEXT( "%s | HTTP Request Failed." ), *LogDetails );
+        return JsonObject;
     }
+
+    UE_LOG( LogCapsaCore, Error, TEXT( "%s | Failed to Deserialize JSON" ), *RequestName);
 
     return nullptr;
 }

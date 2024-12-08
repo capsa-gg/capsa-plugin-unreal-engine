@@ -146,14 +146,14 @@ protected:
 	* Generic HTTP response processing function.
 	* If there is any JSON to gather, will get it out of the Response and return it.
 	* 
-	* @param LogDetails The Log information (such as calling function mame) to prepend to Log Outputs.
+	* @param RequestName The request name (such as calling function name) to prepend to Log Outputs.
 	* @param Request The FHttpRequestPtr that made the Request.
 	* @param Response The FHttpResponsePtr with response information. Payload if successful, error info if not.
 	* @param bSuccess Whether the HTTP response was successful (true) or not (false).
 	* 
 	* @return TSharedPtr<FJsonObject> The JSON Object if any found. Can be null.
 	*/
-	virtual TSharedPtr<FJsonObject>			ProcessResponse( const FString& LogDetails, FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
+	virtual TSharedPtr<FJsonObject>			ProcessResponse( const FString& RequestName, FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
 
 	/**
 	* Called after the Map has loaded with the specified World.

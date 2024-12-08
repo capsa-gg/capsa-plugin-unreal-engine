@@ -35,6 +35,7 @@ public class CapsaLog : ModuleRules
 			{
 				"CoreUObject",
 				"Engine",
+				"HTTP",
 				"Slate",
 				"SlateCore",
 				"DeveloperSettings",
