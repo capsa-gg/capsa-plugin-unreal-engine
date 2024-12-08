@@ -1,4 +1,4 @@
-// Copyright Companion Group, Ltd. All Rights Reserved.
+// Copyright Companion Group, Ltd. Made available under the MIT license
 
 #include "CapsaCore.h"
 #include "FunctionLibrary/CapsaCoreFunctionLibrary.h"
@@ -25,8 +25,8 @@ public:
     FCapsaAsyncTask( TArray<FBufferedLine> InBuffer, CallbackType InCallbackFunction )
         : Buffer( MoveTemp( InBuffer ) )
         , CallbackFunction( InCallbackFunction )
-        , LogExtension( TEXT( ".Log" ) )
-        , CompressedExtension( TEXT( ".Capsa" ) )
+        , LogExtension( TEXT( ".log" ) )
+        , CompressedExtension( TEXT( ".capsa.gz" ) )
     {
     }
 

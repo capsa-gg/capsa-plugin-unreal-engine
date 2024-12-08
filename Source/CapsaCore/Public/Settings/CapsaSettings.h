@@ -1,4 +1,6 @@
-// Copyright Companion Group, Ltd. All Rights Reserved.
+// Copyright Companion Group, Ltd. Made available under the MIT license
+
+#pragma once
 
 #include "Engine/DeveloperSettings.h"
 
@@ -24,29 +26,13 @@ public:
 	FString							GetProtocol() const;
 
 	/**
-	* Get the API URL Prefix for sending auth/log chunks to Capsa.
-	*
-	* @return FString The API Prefix.
-	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Core" )
-	FString							GetAPIPrefix() const;
-
-	/**
-	* Get the Web URL Prefix for generating URLs to access Logs on the hosted Capsa Service.
-	*
-	* @return FString The Web Prefix.
-	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Core" )
-	FString							GetWebPrefix() const;
-
-	/**
-	* Get the Capsa Base URL.
+	* Get the Capsa Server URL.
 	* Suffixes are then applied to make actual requests.
 	* 
 	* @return FString The Capsa Base URL.
 	*/
 	UFUNCTION( BlueprintPure, Category = "Capsa|Core" )
-	FString							GetCapsaBaseURL() const;
+	FString							GetCapsaServerURL() const;
 
 	/**
 	* Get the Capsa Authorization Key.
@@ -54,52 +40,36 @@ public:
 	* @return FString The Capsa Auth Key.
 	*/
 	UFUNCTION( BlueprintPure, Category = "Capsa|Core" )
-	FString							GetCapsaAuthKey() const;
-
-	/**
-	* Get the path to append to the Capsa Base URL, that all suffixes must follow to
-	* generate full Capsa API URLs.
-	*
-	* @return FString The Capsa URL API Path.
-	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Core" )
-	FString							GetCapsaURLAPIPath() const;
-
-	/**
-	* Get the suffix to append to the Capsa Base URL to generate the full Auth URL.
-	*
-	* @return FString The Capsa Base URL Auth Suffix.
-	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Core" )
-	FString							GetCapsaURLAuthSuffix() const;
+	FString							GetCapsaEnvironmentKey() const;
 #pragma endregion CORE_FUNCTIONS
 
+#pragma region SERVER_ENDPOINTS
+	/**
+	* Get the endpoint for receiving a log session ID
+	*
+	* @return FString Endpoint for receiving a log session ID
+	*/
+	UFUNCTION(BlueprintPure, Category = "Capsa|Core")
+	FString							GetServerEndpointClientAuth() const;
+
+	/**
+	* Get the endpoint for sending a log chunk
+	*
+	* @return FString Endpoint for sending a log chunk
+	*/
+	UFUNCTION(BlueprintPure, Category = "Capsa|Core")
+	FString							GetServerEndpointClientLogChunk() const;
+
+	/**
+	* Get the endpoint for sending arbitraty log metadata
+	*
+	* @return FString Endpoint for sending arbitraty log metadata
+	*/
+	UFUNCTION(BlueprintPure, Category = "Capsa|Core")
+	FString							GetServerEndpointClientLogMetadata() const;
+#pragma endregion SERVER_ENDPOINTS
+
 #pragma region LOG_FUNCTIONS
-	/**
-	* Get the suffix to append to the Capsa Base URL to generate the Log URL.
-	* A LogID will be appended after this, provided a successful Auth request has been made.
-	*
-	* @return FString The Capsa URL Log Suffix.
-	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
-	FString							GetCapsaURLLogSuffix() const;
-
-	/**
-	* Get the suffix to append to the Capsa Base URL to generate the full Log Metadata URL.
-	*
-	* @return FString The Capsa URL Log Metadata Suffix.
-	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
-	FString							GetCapsaURLLogMetadataSuffix() const;
-
-	/**
-	* Get the suffix to append to the Capsa Base URL to generate the full Log Chunk URL.
-	*
-	* @return FString The Capsa Base URL Log Chunk Suffix.
-	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
-	FString							GetCapsaURLLogChunkSuffix() const;
-
 	/**
 	* Get the Log Tick Rate (in seconds).
 	*
@@ -182,66 +152,23 @@ protected:
 	/**
 	* The Protocol to use to access Capsa.
 	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core" )
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core", meta = ( DisplayName = "Capsa Server Protocol" ) )
 	FString							Protocol;
-
-	/**
-	* The API Prefix (sub-domain), if needed.
-	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core", meta = ( DisplayName = "Capsa API Prefix" ) )
-	FString							APIPrefix;
-
-	/**
-	* The Web Prefix (sub-domain), if needed.
-	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core" )
-	FString							WebPrefix;
 
 	/**
 	* The Remote URL for where Capsa Service is running.
 	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core", meta = ( DisplayName = "Capsa Base URL" ) )
-	FString							CapsaBaseURL;
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core", meta = ( DisplayName = "Capsa Server URL" ) )
+	FString							CapsaServerURL;
 
 	/**
 	* The Auth Key for making Capsa Service requests.
 	*/
 	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core" )
-	FString							CapsaAuthKey;
-
-	/**
-	* The suffix to add to the CapsaBaseURL (and then add suffixes) to generate the full URLs.
-	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core", meta = ( DisplayName = "Capsa URL API Path" ) )
-	FString							CapsaURLAPIPath;
-
-	/**
-	* The suffix to add to the CapsaBaseURL to generate the full Auth URL.
-	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Core", meta = ( DisplayName = "Capsa URL Auth Suffix" ) )
-	FString							CapsaURLAuthSuffix;
+	FString							CapsaEnvironmentKey;
 #pragma endregion CORE_PROPERTIES
 
 #pragma region LOG_PROPERTIES
-	/**
-	* The suffix to add to the CapsaBaseURL to generate the Log Path.
-	* A LogID will be appended to this, after a valid Auth request.
-	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log", meta = ( DisplayName = "Capsa URL Log Suffix" ) )
-	FString							CapsaURLLogSuffix;
-
-	/**
-	* The suffix to add to the CapsaBaseURL to generate the full Metadata URL.
-	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log", meta = ( DisplayName = "Capsa URL Log Metadata Suffix" ) )
-	FString							CapsaURLLogMetadataSuffix;
-
-	/**
-	* The suffix to add to the CapsaBaseURL to generate the full Log Cunk URL.
-	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log", meta = ( DisplayName = "Capsa URL Log Chunk Suffix" ) )
-	FString							CapsaURLLogChunkSuffix;
-
 	/**
 	* How often (in seconds) should the Log Device check for log lines or time.
 	*/
@@ -305,5 +232,22 @@ protected:
 #pragma endregion COMPONENT_PROPERTIES
 
 private:
+
+#pragma region SERVER_ENDPOINTS
+	/**
+	* Endpoint for receiving a log session ID
+	*/
+	FString							ServerEndpointClientAuth = TEXT("v1/client/auth");
+
+	/**
+	* Endpoint for sending a log chunk
+	*/
+	FString							ServerEndpointClientLogChunk = TEXT("v1/client/log/chunk");
+
+	/**
+	* Endpoint for sending arbitraty log metadata
+	*/
+	FString							ServerEndpointClientLogMetadata = TEXT("v1/client/log/metadata");
+#pragma endregion SERVER_ENDPOINTS
 
 };

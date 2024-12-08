@@ -1,4 +1,4 @@
-// Copyright Companion Group, Ltd. All Rights Reserved.
+// Copyright Companion Group, Ltd. Made available under the MIT license
 
 #include "CapsaCoreSubsystem.h"
 #include "CapsaCore.h"
@@ -134,24 +134,6 @@ void UCapsaCoreSubsystem::SendLog( TArray<FBufferedLine>& LogBuffer )
     }
 }
 
-FString UCapsaCoreSubsystem::GetCapsaLogURL( const FString& InLogID )
-{
-    const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
-    if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
-    {
-        return "";
-    }
-
-    FString LogURL = CapsaSettings->GetProtocol();
-    LogURL.Append( CapsaSettings->GetWebPrefix() );
-    LogURL.Append( CapsaSettings->GetCapsaBaseURL() );
-    //LogURL.Append( CapsaSettings->GetCapsaURLLogSuffix() );   // api needs log/ and web needs logs/
-    LogURL.Append( TEXT( "logs/" ) );
-    LogURL.Append( InLogID );
-
-    return LogURL;
-}
-
 void UCapsaCoreSubsystem::RequestClientAuth()
 {
     const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
@@ -160,21 +142,16 @@ void UCapsaCoreSubsystem::RequestClientAuth()
         UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::RequestClientAuth | Failed to load CapsaSettings." ) );
         return;
     }
-
-    FString AuthURL = CapsaSettings->GetProtocol();
-    AuthURL.Append( CapsaSettings->GetAPIPrefix() );
-    AuthURL.Append( CapsaSettings->GetCapsaBaseURL() );
-    if( CapsaSettings->GetCapsaBaseURL().IsEmpty() == true )
+    if (CapsaSettings->GetCapsaServerURL().IsEmpty() == true)
     {
-        UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::RequestClientAuth | Base URL is Empty!" ) );
+        UE_LOG(LogCapsaCore, Error, TEXT("UCapsaCoreSubsystem::RequestClientAuth | Base URL is Empty!"));
         return;
     }
 
-    AuthURL.Append( CapsaSettings->GetCapsaURLAPIPath() );
-    AuthURL.Append( CapsaSettings->GetCapsaURLAuthSuffix() );
+    FString AuthURL = FString::Printf(TEXT( "%s://%s/%s" ), *CapsaSettings->GetProtocol(), *CapsaSettings->GetCapsaServerURL(), *CapsaSettings->GetServerEndpointClientAuth());
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable( new FJsonObject );
-    JsonObject->SetStringField( TEXT( "key" ), CapsaSettings->GetCapsaAuthKey() );
+    JsonObject->SetStringField( TEXT( "key" ), CapsaSettings->GetCapsaEnvironmentKey() );
     JsonObject->SetStringField( TEXT( "platform" ), UCapsaCoreFunctionLibrary::GetPlatformString() );
     JsonObject->SetStringField( TEXT( "type" ), UCapsaCoreFunctionLibrary::GetHostTypeString() );
     FString AuthContent;
@@ -201,10 +178,7 @@ void UCapsaCoreSubsystem::ClientAuthResponse( FHttpRequestPtr Request, FHttpResp
         LinkWeb = JsonObject->GetStringField( TEXT( "link_web" ) );
         Expiry = JsonObject->GetStringField( TEXT( "expiry" ) );
 
-        // TODO: Change this URL Append to use "link_web" when it is implemented.
-        FString LogURL = GetCapsaLogURL( LogID );
-        UE_LOG( LogCapsaCore, Log, TEXT( "Capsa ID: %s | CapsaLogURL: %s" ), *LogID, *LogURL );
-        // TODO_END
+        UE_LOG( LogCapsaCore, Log, TEXT( "Capsa ID: %s | CapsaLogURL: %s" ), *LogID, *LinkWeb);
 
         return;
     }
@@ -221,12 +195,7 @@ void UCapsaCoreSubsystem::RequestSendLog( const FString& Log )
         return;
     }
 
-    FString LogURL = CapsaSettings->GetProtocol();
-    LogURL.Append( CapsaSettings->GetAPIPrefix() );
-    LogURL.Append( CapsaSettings->GetCapsaBaseURL() );
-    LogURL.Append( CapsaSettings->GetCapsaURLAPIPath() );
-    LogURL.Append( CapsaSettings->GetCapsaURLLogSuffix() );
-    LogURL.Append( CapsaSettings->GetCapsaURLLogChunkSuffix() );
+    FString LogURL = FString::Printf(TEXT( "%s://%s/%s" ), *CapsaSettings->GetProtocol(), *CapsaSettings->GetCapsaServerURL(), *CapsaSettings->GetServerEndpointClientLogChunk());
 
     FString LogAuthHeader = TEXT( "Bearer " );
     LogAuthHeader.Append( Token );
@@ -250,12 +219,7 @@ void UCapsaCoreSubsystem::RequestSendCompressedLog( const TArray<uint8>& Compres
         return;
     }
 
-    FString LogURL = CapsaSettings->GetProtocol();
-    LogURL.Append( CapsaSettings->GetAPIPrefix() );
-    LogURL.Append( CapsaSettings->GetCapsaBaseURL() );
-    LogURL.Append( CapsaSettings->GetCapsaURLAPIPath() );
-    LogURL.Append( CapsaSettings->GetCapsaURLLogSuffix() );
-    LogURL.Append( CapsaSettings->GetCapsaURLLogChunkSuffix() );
+    FString LogURL = FString::Printf(TEXT( "%s://%s/%s" ), *CapsaSettings->GetProtocol(), *CapsaSettings->GetCapsaServerURL(), *CapsaSettings->GetServerEndpointClientLogChunk());
 
     FString LogAuthHeader = TEXT( "Bearer " );
     LogAuthHeader.Append( Token );
@@ -284,18 +248,13 @@ void UCapsaCoreSubsystem::RequestSendMetadata()
         return;
     }
 
-    FString LogURL = CapsaSettings->GetProtocol();
-    LogURL.Append( CapsaSettings->GetAPIPrefix() );
-    LogURL.Append( CapsaSettings->GetCapsaBaseURL() );
-    LogURL.Append( CapsaSettings->GetCapsaURLAPIPath() );
-    LogURL.Append( CapsaSettings->GetCapsaURLLogSuffix() );
-    LogURL.Append( CapsaSettings->GetCapsaURLLogMetadataSuffix() );
+    FString MetadataURL = FString::Printf(TEXT("%s://%s/%s"), *CapsaSettings->GetProtocol(), *CapsaSettings->GetCapsaServerURL(), *CapsaSettings->GetServerEndpointClientLogMetadata());
 
     FString LogAuthHeader = TEXT( "Bearer " );
     LogAuthHeader.Append( Token );
 
     FHttpRequestRef LogRequest = FHttpModule::Get().CreateRequest();
-    LogRequest->SetURL( LogURL );
+    LogRequest->SetURL( MetadataURL );
     LogRequest->SetVerb( "POST" );
     LogRequest->SetHeader( "Authorization", LogAuthHeader );
     LogRequest->AppendToHeader( "Content-Type", "application/json" );
@@ -448,8 +407,7 @@ void UCapsaCoreSubsystem::OpenClientLogInBrowser()
         return;
     }
 
-    FString LogURL = CapsaCore->GetCapsaLogURL( CapsaCore->GetLogID() );
-    UCapsaCoreSubsystem::OpenBrowser( LogURL );
+    UCapsaCoreSubsystem::OpenBrowser(CapsaCore->LinkWeb);
 }
 
 void UCapsaCoreSubsystem::OpenServerLogInBrowser()
@@ -468,8 +426,9 @@ void UCapsaCoreSubsystem::OpenServerLogInBrowser()
         return;
     }
 
-    FString LogURL = CapsaCore->GetCapsaLogURL( CapsaCore->CapsaActorComponent->CapsaServerId );
-    UCapsaCoreSubsystem::OpenBrowser( LogURL );
+    //FString LogURL = CapsaCore->GetCapsaLogURL( CapsaCore->CapsaActorComponent->CapsaServerId );
+    //UCapsaCoreSubsystem::OpenBrowser( LogURL );
+    // FIXME: Reimplement
 }
 
 void UCapsaCoreSubsystem::OpenBrowser( FString URL )

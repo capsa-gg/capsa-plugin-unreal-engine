@@ -1,4 +1,4 @@
-// Copyright Companion Group, Ltd. All Rights Reserved.
+// Copyright Companion Group, Ltd. Made available under the MIT license
 
 #include "Settings/CapsaSettings.h"
 
@@ -6,16 +6,9 @@
 
 
 UCapsaSettings::UCapsaSettings()
-	: Protocol( "https://" )
-	, APIPrefix( "api." )
-	, WebPrefix( "web." )
-	, CapsaBaseURL( "" )
-	, CapsaAuthKey( "" )
-	, CapsaURLAPIPath( "" )
-	, CapsaURLAuthSuffix( "auth" )
-	, CapsaURLLogSuffix( "log/" )
-	, CapsaURLLogMetadataSuffix( "metadata" )
-	, CapsaURLLogChunkSuffix( "chunk" )
+	: Protocol( "https" )
+	, CapsaServerURL( "" )
+	, CapsaEnvironmentKey( "" )
 	, LogTickRate( 1.f )
 	, MaxTimeBetweenLogFlushes( 10.f )
 	, MaxLogLinesBetweenLogFlushes( 100 )
@@ -33,15 +26,31 @@ FString UCapsaSettings::GetProtocol() const
 	return Protocol;
 }
 
-FString UCapsaSettings::GetAPIPrefix() const
+FString UCapsaSettings::GetCapsaServerURL() const
 {
-	return APIPrefix;
+	return CapsaServerURL;
 }
 
-FString UCapsaSettings::GetWebPrefix() const
+FString UCapsaSettings::GetCapsaEnvironmentKey() const
 {
-	return WebPrefix;
+	return CapsaEnvironmentKey;
 }
+
+FString UCapsaSettings::GetServerEndpointClientAuth() const
+{
+	return ServerEndpointClientAuth;
+}
+
+FString UCapsaSettings::GetServerEndpointClientLogChunk() const
+{
+	return ServerEndpointClientLogChunk;
+}
+
+FString UCapsaSettings::GetServerEndpointClientLogMetadata() const
+{
+	return ServerEndpointClientLogMetadata;
+}
+
 
 float UCapsaSettings::GetLogTickRate() const
 {
@@ -86,39 +95,4 @@ float UCapsaSettings::GetLookForClassTime() const
 int32 UCapsaSettings::GetLookForClassLoopMax() const
 {
 	return LookForClassLoopMax;
-}
-
-FString UCapsaSettings::GetCapsaBaseURL() const
-{
-	return CapsaBaseURL;
-}
-
-FString UCapsaSettings::GetCapsaAuthKey() const
-{
-	return CapsaAuthKey;
-}
-
-FString UCapsaSettings::GetCapsaURLAPIPath() const
-{
-	return CapsaURLAPIPath;
-}
-
-FString UCapsaSettings::GetCapsaURLAuthSuffix() const
-{
-	return CapsaURLAuthSuffix;
-}
-
-FString UCapsaSettings::GetCapsaURLLogSuffix() const
-{
-	return CapsaURLLogSuffix;
-}
-
-FString UCapsaSettings::GetCapsaURLLogMetadataSuffix() const
-{
-	return CapsaURLLogMetadataSuffix;
-}
-
-FString UCapsaSettings::GetCapsaURLLogChunkSuffix() const
-{
-	return CapsaURLLogChunkSuffix;
 }

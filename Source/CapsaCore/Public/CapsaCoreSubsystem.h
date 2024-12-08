@@ -1,4 +1,4 @@
-// Copyright Companion Group, Ltd. All Rights Reserved.
+// Copyright Companion Group, Ltd. Made available under the MIT license
 
 #pragma once
 
@@ -81,14 +81,6 @@ public:
 	static void								OpenServerLogInBrowser();
 
 protected:
-
-	/**
-	* Attempts to build a URL to the Capsa server for viewing Logs, using the provided LogID.
-	* 
-	* @param InLogID The LogID to append to the URL.
-	* @return FString The full URL if successful, otherwise empty.
-	*/
-	FString									GetCapsaLogURL( const FString& InLogID );
 
 	/**
 	* Request a Capsa Auth Token.

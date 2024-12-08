@@ -1,4 +1,4 @@
-// Copyright Companion Group, Ltd. All Rights Reserved.
+// Copyright Companion Group, Ltd. Made available under the MIT license
 
 #include "CapsaLog.h"
 
@@ -15,4 +15,4 @@ void FCapsaLogModule::ShutdownModule()
 #undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE( FCapsaLogModule, CapsaLog )
-DEFINE_LOG_CATEGORY( LogCapsa );
+DEFINE_LOG_CATEGORY( LogCapsaLog );

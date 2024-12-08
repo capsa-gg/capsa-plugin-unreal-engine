@@ -1,10 +1,10 @@
-// Copyright Companion Group, Ltd. All Rights Reserved.
+// Copyright Companion Group, Ltd. Made available under the MIT license
 
 #include "FunctionLibrary/CapsaCoreFunctionLibrary.h"
 
 
 
-
+// TODO: Add more platforms
 FString UCapsaCoreFunctionLibrary::GetPlatformString()
 {
 	FString Platform = TEXT( "Unknown" );
