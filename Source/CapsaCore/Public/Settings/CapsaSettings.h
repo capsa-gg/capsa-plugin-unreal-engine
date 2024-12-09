@@ -35,9 +35,9 @@ public:
 	FString							GetCapsaServerURL() const;
 
 	/**
-	* Get the Capsa Authorization Key.
+	* Get the Capsa Environment Key to authenticate with the Capsa API Server.
 	*
-	* @return FString The Capsa Auth Key.
+	* @return FString The Capsa Environment Key.
 	*/
 	UFUNCTION( BlueprintPure, Category = "Capsa|Core" )
 	FString							GetCapsaEnvironmentKey() const;
@@ -45,7 +45,7 @@ public:
 
 #pragma region SERVER_ENDPOINTS
 	/**
-	* Get the endpoint for receiving a log session ID
+	* Get the full endpoint URL for receiving a log session ID
 	*
 	* @return FString Endpoint for receiving a log session ID
 	*/
@@ -53,7 +53,7 @@ public:
 	FString							GetServerEndpointClientAuth() const;
 
 	/**
-	* Get the endpoint for sending a log chunk
+	* Get the full endpoint URL for sending a log chunk
 	*
 	* @return FString Endpoint for sending a log chunk
 	*/
@@ -61,9 +61,9 @@ public:
 	FString							GetServerEndpointClientLogChunk() const;
 
 	/**
-	* Get the endpoint for sending arbitraty log metadata
+	* Get the full endpoint URL for sending arbitrary log metadata
 	*
-	* @return FString Endpoint for sending arbitraty log metadata
+	* @return FString Endpoint for sending arbitrary log metadata
 	*/
 	UFUNCTION(BlueprintPure, Category = "Capsa|Core")
 	FString							GetServerEndpointClientLogMetadata() const;
@@ -234,6 +234,14 @@ protected:
 private:
 
 #pragma region SERVER_ENDPOINTS
+	/**
+	* Uses the configuration to use generate the Capsa API server base, including trailing slash
+	*
+	* @return FString Server Base URL that can be used with an Endpoint string to generate the full endpoint URL
+	*/
+	FString							GenerateServerBaseURL() const;
+
+	
 	/**
 	* Endpoint for receiving a log session ID
 	*/

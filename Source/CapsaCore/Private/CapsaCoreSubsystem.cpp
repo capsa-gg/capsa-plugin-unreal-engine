@@ -118,7 +118,7 @@ void UCapsaCoreSubsystem::SendLog( TArray<FBufferedLine>& LogBuffer )
         // This requires a Binary Callback, not an FString
         ( new FAutoDeleteAsyncTask<FSaveCompressedStringFromBufferTask>( LogID, CapsaSettings->GetWriteToDisk(), MoveTemp(LogBuffer), CallbackFunc) )->StartBackgroundTask();
     }
-    else
+    else // bUseCompression == false
     {
         FAsyncStringFromBufferCallback CallbackFunc = [this]( const FString& Log )
             {
@@ -148,7 +148,7 @@ void UCapsaCoreSubsystem::RequestClientAuth()
         return;
     }
 
-    FString AuthURL = FString::Printf(TEXT( "%s://%s/%s" ), *CapsaSettings->GetProtocol(), *CapsaSettings->GetCapsaServerURL(), *CapsaSettings->GetServerEndpointClientAuth());
+    FString AuthURL = CapsaSettings->GetServerEndpointClientAuth();
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable( new FJsonObject );
     JsonObject->SetStringField( TEXT( "key" ), CapsaSettings->GetCapsaEnvironmentKey() );
@@ -201,7 +201,7 @@ void UCapsaCoreSubsystem::RequestSendLog( const FString& Log )
         return;
     }
 
-    FString LogURL = FString::Printf(TEXT( "%s://%s/%s" ), *CapsaSettings->GetProtocol(), *CapsaSettings->GetCapsaServerURL(), *CapsaSettings->GetServerEndpointClientLogChunk());
+    FString LogURL = CapsaSettings->GetServerEndpointClientLogChunk();
 
     FString LogAuthHeader = TEXT( "Bearer " );
     LogAuthHeader.Append( Token );
@@ -218,7 +218,7 @@ void UCapsaCoreSubsystem::RequestSendLog( const FString& Log )
 
 void UCapsaCoreSubsystem::RequestSendCompressedLog( const TArray<uint8>& CompressedLog )
 {
-    UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::RequestSendLog | Sending log chunk with compression") );
+    UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::RequestSendCompressedLog | Sending log chunk with compression") );
 
     const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
     if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
@@ -227,7 +227,7 @@ void UCapsaCoreSubsystem::RequestSendCompressedLog( const TArray<uint8>& Compres
         return;
     }
 
-    FString LogURL = FString::Printf(TEXT( "%s://%s/%s" ), *CapsaSettings->GetProtocol(), *CapsaSettings->GetCapsaServerURL(), *CapsaSettings->GetServerEndpointClientLogChunk());
+    FString LogURL = *CapsaSettings->GetServerEndpointClientLogChunk();
 
     FString LogAuthHeader = TEXT( "Bearer " );
     LogAuthHeader.Append( Token );
@@ -236,7 +236,7 @@ void UCapsaCoreSubsystem::RequestSendCompressedLog( const TArray<uint8>& Compres
     LogRequest->SetURL( LogURL );
     LogRequest->SetVerb( "POST" );
     LogRequest->SetHeader( "Authorization", LogAuthHeader );
-    LogRequest->AppendToHeader( "Content-Type", "application/octet-stream" );
+    LogRequest->AppendToHeader( "Content-Type", "application/gzip" );
     LogRequest->SetContent( CompressedLog );
     LogRequest->OnProcessRequestComplete().BindUObject( this, &UCapsaCoreSubsystem::LogResponse );
     LogRequest->ProcessRequest();
@@ -244,7 +244,7 @@ void UCapsaCoreSubsystem::RequestSendCompressedLog( const TArray<uint8>& Compres
 
 void UCapsaCoreSubsystem::LogResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
 {
-    UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::RequestSendLog | Log chunk stored") );
+    UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::LogResponse | Log chunk stored") );
 
     ProcessResponse( TEXT( "UCapsaCoreSubsystem::LogResponse" ), Request, Response, bSuccess );
 }
@@ -260,7 +260,7 @@ void UCapsaCoreSubsystem::RequestSendMetadata()
         return;
     }
 
-    FString MetadataURL = FString::Printf(TEXT("%s://%s/%s"), *CapsaSettings->GetProtocol(), *CapsaSettings->GetCapsaServerURL(), *CapsaSettings->GetServerEndpointClientLogMetadata());
+    FString MetadataURL = CapsaSettings->GetServerEndpointClientLogMetadata();
 
     FString LogAuthHeader = TEXT( "Bearer " );
     LogAuthHeader.Append( Token );

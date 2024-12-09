@@ -38,17 +38,26 @@ FString UCapsaSettings::GetCapsaEnvironmentKey() const
 
 FString UCapsaSettings::GetServerEndpointClientAuth() const
 {
-	return ServerEndpointClientAuth;
+	FString Url = GenerateServerBaseURL();
+	Url.Append( ServerEndpointClientAuth );
+	
+	return Url;
 }
 
 FString UCapsaSettings::GetServerEndpointClientLogChunk() const
 {
-	return ServerEndpointClientLogChunk;
+	FString Url = GenerateServerBaseURL();
+	Url.Append( ServerEndpointClientLogChunk );
+	
+	return Url;
 }
 
 FString UCapsaSettings::GetServerEndpointClientLogMetadata() const
 {
-	return ServerEndpointClientLogMetadata;
+	FString Url = GenerateServerBaseURL();
+	Url.Append( ServerEndpointClientLogMetadata );
+	
+	return Url;
 }
 
 
@@ -95,4 +104,16 @@ float UCapsaSettings::GetLookForClassTime() const
 int32 UCapsaSettings::GetLookForClassLoopMax() const
 {
 	return LookForClassLoopMax;
+}
+
+FString UCapsaSettings::GenerateServerBaseURL() const
+{
+	// Equivalent to FString::Printf(TEXT( "%s://%s/" )	
+	FString ServerBaseUrl = TEXT( "" );
+	ServerBaseUrl.Append( GetProtocol() );
+	ServerBaseUrl.Append( TEXT( "://" ) );
+	ServerBaseUrl.Append( GetCapsaServerURL() );
+	ServerBaseUrl.Append( TEXT( "/" ) );
+	
+	return ServerBaseUrl;
 }
