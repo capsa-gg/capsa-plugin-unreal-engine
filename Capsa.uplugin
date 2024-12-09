@@ -24,16 +24,6 @@
 			"Name": "CapsaLog",
 			"Type": "Runtime",
 			"LoadingPhase": "PreDefault"
-		},
-		{
-			"Name": "CapsaCrash",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		},
-		{
-			"Name": "CapsaOTEL",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
 		}
 	]
 }
