@@ -144,7 +144,7 @@ void UCapsaCoreSubsystem::RequestClientAuth()
     }
     if (CapsaSettings->GetCapsaServerURL().IsEmpty() == true)
     {
-        UE_LOG(LogCapsaCore, Error, TEXT("UCapsaCoreSubsystem::RequestClientAuth | Base URL is Empty!"));
+        UE_LOG( LogCapsaCore, Error, TEXT("UCapsaCoreSubsystem::RequestClientAuth | Base URL is Empty!") );
         return;
     }
 
@@ -165,10 +165,14 @@ void UCapsaCoreSubsystem::RequestClientAuth()
     ClientAuthRequest->SetContentAsString( AuthContent );
     ClientAuthRequest->OnProcessRequestComplete().BindUObject( this, &UCapsaCoreSubsystem::ClientAuthResponse );
     ClientAuthRequest->ProcessRequest();
+
+    UE_LOG( LogCapsaCore, Log, TEXT("UCapsaCoreSubsystem::RequestClientAuth | Authentication request sent") );
 }
 
 void UCapsaCoreSubsystem::ClientAuthResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
 {
+    UE_LOG( LogCapsaCore, Log, TEXT("UCapsaCoreSubsystem::ClientAuthResponse | Authentication resonse received sent") );
+
     TSharedPtr<FJsonObject> JsonObject = ProcessResponse( TEXT( "UCapsaCoreSubsystem::ClientAuthResponse" ), Request, Response, bSuccess );
 
     if( JsonObject != nullptr && JsonObject.IsValid() == true )
@@ -188,6 +192,8 @@ void UCapsaCoreSubsystem::ClientAuthResponse( FHttpRequestPtr Request, FHttpResp
 
 void UCapsaCoreSubsystem::RequestSendLog( const FString& Log )
 {
+    UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::RequestSendLog | Sending log chunk without compression") );
+
     const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
     if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
     {
@@ -212,6 +218,8 @@ void UCapsaCoreSubsystem::RequestSendLog( const FString& Log )
 
 void UCapsaCoreSubsystem::RequestSendCompressedLog( const TArray<uint8>& CompressedLog )
 {
+    UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::RequestSendLog | Sending log chunk with compression") );
+
     const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
     if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
     {
@@ -236,11 +244,15 @@ void UCapsaCoreSubsystem::RequestSendCompressedLog( const TArray<uint8>& Compres
 
 void UCapsaCoreSubsystem::LogResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
 {
+    UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::RequestSendLog | Log chunk stored") );
+
     ProcessResponse( TEXT( "UCapsaCoreSubsystem::LogResponse" ), Request, Response, bSuccess );
 }
 
 void UCapsaCoreSubsystem::RequestSendMetadata()
 {
+    UE_LOG (LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::RequestSendMetadata | Storing metadata") );
+
     const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
     if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
     {
@@ -268,6 +280,7 @@ void UCapsaCoreSubsystem::RequestSendMetadata()
     }
     JsonObject->SetArrayField( TEXT( "log_links" ), LinkedLogs );
     
+    // FIXME: Add support
     TArray<TSharedPtr<FJsonValue>> AdditionalMetadata;
     // Loop/Add Metadata
     JsonObject->SetArrayField( TEXT( "additional_metadata" ), AdditionalMetadata );
@@ -283,16 +296,23 @@ void UCapsaCoreSubsystem::RequestSendMetadata()
 
 void UCapsaCoreSubsystem::MetadataResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
 {
+    UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::MetadataResponse | Metadata stored") );
+
     ProcessResponse( TEXT( "UCapsaCoreSubsystem::MetadataResponse" ), Request, Response, bSuccess );
 }
 
 TSharedPtr<FJsonObject> UCapsaCoreSubsystem::ProcessResponse( const FString& RequestName, FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
 {
     // Exit early if request failed
-    if (!bSuccess == true)
+    if( !bSuccess == true )
     {
-        UE_LOG(LogCapsaCore, Error, TEXT("%s | HTTP Request Failed: %s."), *RequestName, (Response == nullptr || Response.IsValid() == false) ? TEXT("Invalid Response Ptr") : *Response->GetContentAsString());
+        UE_LOG( LogCapsaCore, Error, TEXT("%s | HTTP Request Failed: %s."), *RequestName, (Response == nullptr || Response.IsValid() == false) ? TEXT("Invalid Response Ptr") : *Response->GetContentAsString() );
+        return nullptr;
+    }
 
+    if ( Response->GetContentAsString().Len() == 0 ) 
+    {
+        UE_LOG( LogCapsaCore, VeryVerbose, TEXT("%s | Not Deserializing JSON due to empty response body"), *RequestName );
         return nullptr;
     }
 
@@ -344,6 +364,8 @@ void UCapsaCoreSubsystem::OnPostWorldInit( UWorld* World, const UWorld::Initiali
     
     FGameModeEvents::GameModePostLoginEvent.AddUObject( this, &UCapsaCoreSubsystem::OnPlayerLoggedIn );
     FGameModeEvents::GameModeLogoutEvent.AddUObject( this, &UCapsaCoreSubsystem::OnPlayerLoggedOut );
+
+    UE_LOG( LogCapsaCore, Log, TEXT("UCapsaCoreSubsystem::OnPostWorldInit | GameModePostLoginEvent and GameModeLogoutEvent delegates added") );
 }
 
 void UCapsaCoreSubsystem::OnPlayerLoggedIn( AGameModeBase* GameMode, APlayerController* Player )
@@ -378,8 +400,12 @@ void UCapsaCoreSubsystem::OnPlayerLoggedIn( AGameModeBase* GameMode, APlayerCont
         {
             // Store a Weak Reference to the first made Actor Component.
             CapsaActorComponent = Cast<UCapsaActorComponent>( ActorComponent );
+
+            UE_LOG(LogCapsaCore, VeryVerbose, TEXT("UCapsaCoreSubsystem::OnPlayerLoggedIn | UCapsaActorComponent reference stored"));
         }
     }
+
+    UE_LOG(LogCapsaCore, VeryVerbose, TEXT("UCapsaCoreSubsystem::OnPlayerLoggedIn | Finished"));
 }
 
 void UCapsaCoreSubsystem::OnPlayerLoggedOut( AGameModeBase* GameMode, AController* Controller )
@@ -389,6 +415,8 @@ void UCapsaCoreSubsystem::OnPlayerLoggedOut( AGameModeBase* GameMode, AControlle
 void UCapsaCoreSubsystem::OpenClientLogInBrowser()
 {
     UCapsaCoreSubsystem* CapsaCore = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
+
+    UE_LOG(LogCapsaCore, VeryVerbose, TEXT("UCapsaCoreSubsystem::OpenClientLogInBrowser | Opening in browser"));
 
     if( CapsaCore == nullptr || CapsaCore->IsValidLowLevelFast() == false )
     {
@@ -402,6 +430,8 @@ void UCapsaCoreSubsystem::OpenClientLogInBrowser()
 void UCapsaCoreSubsystem::OpenServerLogInBrowser()
 {
     UCapsaCoreSubsystem* CapsaCore = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
+
+    UE_LOG(LogCapsaCore, VeryVerbose, TEXT("UCapsaCoreSubsystem::OpenServerLogInBrowser | Opening in browser"));
 
     if( CapsaCore == nullptr || CapsaCore->IsValidLowLevelFast() == false )
     {

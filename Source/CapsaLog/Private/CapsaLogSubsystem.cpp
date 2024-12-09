@@ -1,11 +1,11 @@
 // Copyright Companion Group, Ltd. Made available under the MIT license
 
-#include "CapsaSubsystem.h"
+#include "CapsaLogSubsystem.h"
 
 #include "Misc/CapsaOutputDevice.h"
 
 
-void UCapsaSubsystem::Initialize( FSubsystemCollectionBase& Collection )
+void UCapsaLogSubsystem::Initialize( FSubsystemCollectionBase& Collection )
 {
 	Super::Initialize( Collection );
 
@@ -14,7 +14,7 @@ void UCapsaSubsystem::Initialize( FSubsystemCollectionBase& Collection )
 #endif
 }
 
-void UCapsaSubsystem::Deinitialize()
+void UCapsaLogSubsystem::Deinitialize()
 {
 	Super::Deinitialize();
 }

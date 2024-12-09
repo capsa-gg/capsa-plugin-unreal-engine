@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/EngineSubsystem.h"
 
-#include "CapsaSubsystem.generated.h"
+#include "CapsaLogSubsystem.generated.h"
 
 // Forward Declarations
 struct FCapsaOutputDevice;
@@ -14,7 +14,7 @@ struct FCapsaOutputDevice;
  * 
  */
 UCLASS()
-class CAPSALOG_API UCapsaSubsystem : public UEngineSubsystem
+class CAPSALOG_API UCapsaLogSubsystem : public UEngineSubsystem
 {
 	GENERATED_BODY()
 	

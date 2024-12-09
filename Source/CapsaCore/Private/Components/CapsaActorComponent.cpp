@@ -33,6 +33,8 @@ void UCapsaActorComponent::SERVER_SetCapsaId_Implementation( const FString& NewC
 	{
 		OnCapsaIdUpdated( OldCapsaId );
 	}
+
+	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::SERVER_SetCapsaId_Implementation | OldCapsaId: %s, NewCapsaId: %s"), *OldCapsaId, *NewCapsaId );
 }
 
 void UCapsaActorComponent::OnCapsaIdUpdated( FString OldCapsaId )
@@ -44,6 +46,8 @@ void UCapsaActorComponent::OnCapsaIdUpdated( FString OldCapsaId )
 	}
 
 	CapsaCoreSubsystem->RegisterLinkedLogID( CapsaId );
+
+	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::OnCapsaIdUpdated | CapsaId Updated: %s"), *CapsaId );
 }
 
 void UCapsaActorComponent::OnCapsaServerIdUpdated( FString OldCapsaServerId )
@@ -55,11 +59,15 @@ void UCapsaActorComponent::OnCapsaServerIdUpdated( FString OldCapsaServerId )
 	}
 
 	CapsaCoreSubsystem->RegisterLinkedLogID( CapsaServerId );
+
+	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::OnCapsaServerIdUpdated | CapsaServerId Updated: %s"), *CapsaServerId );
 }
 
 void UCapsaActorComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::BeginPlay | Begin Play") );
 
 	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
 	if( CapsaCoreSubsystem == nullptr )
@@ -81,6 +89,8 @@ void UCapsaActorComponent::BeginPlay()
 
 void UCapsaActorComponent::EndPlay( EEndPlayReason::Type EndPlayReason )
 {
+	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::BeginPlay | End Play") );
+
 	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
 	if( CapsaCoreSubsystem == nullptr )
 	{
