@@ -3,8 +3,6 @@
 #include "FunctionLibrary/CapsaCoreFunctionLibrary.h"
 
 
-
-// TODO: Add more platforms
 FString UCapsaCoreFunctionLibrary::GetPlatformString()
 {
 	FString Platform = TEXT( "Unknown" );
@@ -17,11 +15,22 @@ FString UCapsaCoreFunctionLibrary::GetPlatformString()
 	Platform = TEXT( "Mac" );
 #elif PLATFORM_SWITCH
 	Platform = TEXT( "Switch" );
+#elif PLATFORM_IOS
+	Platform = TEXT( "iOS" );
+#elif PLATFORM_ANDROID
+	Platform = TEXT( "Android" );
+#elif PLATFORM_UNIX
+	Platform = TEXT( "Unix" );
+#elif PLATFORM_FREEBSD
+	Platform = TEXT( "FreeBSD" );
+#elif PLATFORM_TVOS
+	Platform = TEXT( "TVOS" );
 #endif
 
 	return Platform;
 }
 
+// TODO: Add more HostTypes
 FString UCapsaCoreFunctionLibrary::GetHostTypeString()
 {
 	FString HostType = TEXT( "Client" );

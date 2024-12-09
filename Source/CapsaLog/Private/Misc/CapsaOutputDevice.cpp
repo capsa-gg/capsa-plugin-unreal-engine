@@ -11,6 +11,7 @@ FCapsaOutputDevice::FCapsaOutputDevice()
 	, MaxLogLines( 100 )
 	, LastUpdateTime( 0 )
 {
+	// TODO: Make this a config option
 	FilterLevel = ELogVerbosity::All;
 	Initialize();
 }

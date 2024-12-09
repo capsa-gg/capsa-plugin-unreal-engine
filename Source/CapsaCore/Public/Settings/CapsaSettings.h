@@ -103,12 +103,20 @@ public:
 	bool							GetUseCompression() const;
 
 	/**
-	* Get whether write Log to disk.
+	* Get whether write plain text Log to disk.
 	*
 	* @return bool Write to disk (true) or not (false).
 	*/
 	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
-	bool							GetWriteToDisk() const;
+	bool							GetWriteToDiskPlain() const;
+
+	/**
+	* Get whether write compressed Log to disk.
+	*
+	* @return bool Write to disk (true) or not (false).
+	*/
+	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
+	bool							GetWriteToDiskCompressed() const;
 #pragma endregion LOG_FUNCTIONS
 
 #pragma region COMPONENT_FUNCTIONS
@@ -194,10 +202,17 @@ protected:
 	bool							bUseCompression;
 
 	/**
-	* Whether we should write the Log to disk.
+	* Whether we should write the plain text Log to disk.
 	*/
 	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log" )
-	bool							bWriteToDisk;
+	bool							bWriteToDiskPlain;
+
+	/**
+	* Whether we should write the compressed Log to disk.
+	* This property is ignored if bUseCompression is set to False.
+	*/
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log" )
+	bool							bWriteToDiskCompressed;
 #pragma endregion LOG_PROPERTIES
 
 #pragma region COMPONENT_PROPERTIES

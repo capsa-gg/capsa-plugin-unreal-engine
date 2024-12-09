@@ -116,7 +116,7 @@ void UCapsaCoreSubsystem::SendLog( TArray<FBufferedLine>& LogBuffer )
             };
         // Example AsyncTask to attempt to SAVE the file using the LogID (as filename), whether compressed or not, then fire the Callback.
         // This requires a Binary Callback, not an FString
-        ( new FAutoDeleteAsyncTask<FSaveCompressedStringFromBufferTask>( LogID, CapsaSettings->GetWriteToDisk(), MoveTemp(LogBuffer), CallbackFunc) )->StartBackgroundTask();
+        ( new FAutoDeleteAsyncTask<FSaveCompressedStringFromBufferTask>( LogID, CapsaSettings->GetWriteToDiskPlain(), CapsaSettings->GetWriteToDiskCompressed(), MoveTemp(LogBuffer), CallbackFunc) )->StartBackgroundTask();
     }
     else // bUseCompression == false
     {
@@ -125,12 +125,8 @@ void UCapsaCoreSubsystem::SendLog( TArray<FBufferedLine>& LogBuffer )
                 RequestSendLog( Log );
             };
         // These all require an FString Callback.
-        // Example AsyncTask to simply generate a Log from Buffer and fire the Callback.
-        //( new FAutoDeleteAsyncTask<FMakeStringFromBufferTask>( MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
         // Example AsyncTask to generate a Log and Optionally write it to Disk, then fire the Callback.
-        ( new FAutoDeleteAsyncTask< FSaveStringFromBufferTask>( LogID, CapsaSettings->GetWriteToDisk(), MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
-        // Example AsyncTask to attempt to LOAD the file from the LogID (as filename), whether compressed or not, then fire the Callback.
-        //( new FAutoDeleteAsyncTask<FLoadStringFromFileTask>( LogID, true, MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
+        ( new FAutoDeleteAsyncTask<FSaveStringFromBufferTask>( LogID, CapsaSettings->GetWriteToDiskPlain(), MoveTemp( LogBuffer ), CallbackFunc ) )->StartBackgroundTask();
     }
 }
 
@@ -210,7 +206,7 @@ void UCapsaCoreSubsystem::RequestSendLog( const FString& Log )
     LogRequest->SetURL( LogURL );
     LogRequest->SetVerb( "POST" );
     LogRequest->SetHeader( "Authorization", LogAuthHeader );
-    LogRequest->AppendToHeader( "Content-Type", "text/plain" );
+    LogRequest->SetHeader( "Content-Type", "text/plain" );
     LogRequest->SetContentAsString( Log );
     LogRequest->OnProcessRequestComplete().BindUObject( this, &UCapsaCoreSubsystem::LogResponse );
     LogRequest->ProcessRequest();
@@ -236,7 +232,7 @@ void UCapsaCoreSubsystem::RequestSendCompressedLog( const TArray<uint8>& Compres
     LogRequest->SetURL( LogURL );
     LogRequest->SetVerb( "POST" );
     LogRequest->SetHeader( "Authorization", LogAuthHeader );
-    LogRequest->AppendToHeader( "Content-Type", "application/gzip" );
+    LogRequest->SetHeader( "Content-Type", "application/zlib" );
     LogRequest->SetContent( CompressedLog );
     LogRequest->OnProcessRequestComplete().BindUObject( this, &UCapsaCoreSubsystem::LogResponse );
     LogRequest->ProcessRequest();
@@ -310,9 +306,14 @@ TSharedPtr<FJsonObject> UCapsaCoreSubsystem::ProcessResponse( const FString& Req
         return nullptr;
     }
 
-    if ( Response->GetContentAsString().Len() == 0 ) 
+    if( Response->GetResponseCode() > 299 )
     {
-        UE_LOG( LogCapsaCore, VeryVerbose, TEXT("%s | Not Deserializing JSON due to empty response body"), *RequestName );
+        UE_LOG( LogCapsaCore, Warning, TEXT("%s | Received non-2xx response code %d: %s."), *RequestName, Response->GetResponseCode(), (Response == nullptr || Response.IsValid() == false) ? TEXT("Invalid Response Ptr") : *Response->GetContentAsString() );
+    }
+
+    if( Response->GetContentAsString().IsEmpty() ) 
+    {
+        UE_LOG( LogCapsaCore, VeryVerbose, TEXT("%s | Not deserializing JSON due to empty response body"), *RequestName );
         return nullptr;
     }
 
@@ -325,7 +326,7 @@ TSharedPtr<FJsonObject> UCapsaCoreSubsystem::ProcessResponse( const FString& Req
         return JsonObject;
     }
 
-    UE_LOG( LogCapsaCore, Error, TEXT( "%s | Failed to Deserialize JSON" ), *RequestName);
+    UE_LOG( LogCapsaCore, Error, TEXT( "%s | Failed to deserialize JSON" ), *RequestName);
 
     return nullptr;
 }

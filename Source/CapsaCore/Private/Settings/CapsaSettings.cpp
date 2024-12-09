@@ -13,7 +13,8 @@ UCapsaSettings::UCapsaSettings()
 	, MaxTimeBetweenLogFlushes( 10.f )
 	, MaxLogLinesBetweenLogFlushes( 100 )
 	, bUseCompression( true )
-	, bWriteToDisk( true )
+	, bWriteToDiskPlain( true )
+	, bWriteToDiskCompressed( false )
 	, bAutoAddCapsaComponent( true )
 	, AutoAddClass( APlayerState::StaticClass() )
 	, LookForClassTime( 1.f )
@@ -81,9 +82,14 @@ bool UCapsaSettings::GetUseCompression() const
 	return bUseCompression;
 }
 
-bool UCapsaSettings::GetWriteToDisk() const
+bool UCapsaSettings::GetWriteToDiskPlain() const
 {
-	return bWriteToDisk;
+	return bWriteToDiskPlain;
+}
+
+bool UCapsaSettings::GetWriteToDiskCompressed() const
+{
+	return bWriteToDiskCompressed;
 }
 
 bool UCapsaSettings::GetShouldAutoAddCapsaComponent() const
