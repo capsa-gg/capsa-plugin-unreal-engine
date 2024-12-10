@@ -40,6 +40,7 @@ public class CapsaCore : ModuleRules
 				"DeveloperSettings",
 				"HTTP",
 				"Json",
+				"JsonUtilities",
 			}
 			);
 		

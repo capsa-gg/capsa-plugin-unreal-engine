@@ -2,6 +2,7 @@
 
 #include "CapsaCore.h"
 
+
 #define LOCTEXT_NAMESPACE "FCapsaCoreModule"
 
 void FCapsaCoreModule::StartupModule()

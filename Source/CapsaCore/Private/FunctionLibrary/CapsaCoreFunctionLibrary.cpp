@@ -2,6 +2,8 @@
 
 #include "FunctionLibrary/CapsaCoreFunctionLibrary.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(CapsaCoreFunctionLibrary)
+
 
 FString UCapsaCoreFunctionLibrary::GetPlatformString()
 {

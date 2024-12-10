@@ -7,11 +7,15 @@
 
 #include "CapsaLogSubsystem.generated.h"
 
+#ifndef WITH_CAPSA_LOG_ENABLED
+#define WITH_CAPSA_LOG_ENABLED !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+#endif
+
 // Forward Declarations
 struct FCapsaOutputDevice;
 
 /**
- * 
+ * UCapsaLogSubsystem is responsible for attaching the FCapsaOutputDevice.
  */
 UCLASS()
 class CAPSALOG_API UCapsaLogSubsystem : public UEngineSubsystem
@@ -32,7 +36,7 @@ protected:
 	* and handles compressing/uploading logs to the remote service.
 	*/
 	TPimplPtr<FCapsaOutputDevice>		CapsaLogOutputDevice;
-
+	
 private:
 
 

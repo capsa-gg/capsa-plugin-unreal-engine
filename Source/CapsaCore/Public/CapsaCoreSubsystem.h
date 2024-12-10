@@ -11,6 +11,10 @@
 // Forward Declarations
 class UCapsaActorComponent;
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams( FCapsaCoreOnAuthChangedDynamicDelegate, const FString&, CapsaLogId, const FString&, CapsaLogURL );
+DECLARE_MULTICAST_DELEGATE_TwoParams( FCapsaCoreOnAuthChangedDelegate, const FString& /* CapsaLogId */, const FString& /* CapsaLogURL */ );
+
 /**
  * 
  */
@@ -29,6 +33,19 @@ public:
 	// End USubsystem
 
 	/**
+	* Delegate that will be called whenever the authentication changes, for example whenever a log session has been created.
+	* This delegate should be used in Blueprints.
+	*/
+	UPROPERTY( BlueprintAssignable )
+	FCapsaCoreOnAuthChangedDynamicDelegate	OnAuthChangedDynamic;
+
+	/**
+	* Delegate that will be called whenever the authentication changes, for example whenever a log session has been created.
+	* This delegate should be used in C++.
+	*/
+	FCapsaCoreOnAuthChangedDelegate			OnAuthChanged;
+	
+	/**
 	* Whether we have been Authenticated with the Services.
 	* 
 	* @return bool True if authenticated, otherwise false.
@@ -38,25 +55,26 @@ public:
 	/**
 	* Returns the LogID of the currently active connection.
 	* 
-	* @param FString The LogID.
+	* @return FString The LogID.
 	*/
 	FString									GetLogID() const;
+
+	/**
+	* Returns the LogURL of the currently active connection.
+	* 
+	* @return FString The LogURL.
+	*/
+	FString									GetLogURL() const;
 
 	/**
 	* Attempts to Register the provided Log ID as a Linked Log ID.
 	* 
 	* @param FString The LinkedLogID to try and register.
+	* @param FString The Linked log's description, fe. whether it's a server or client
 	* @return bool True if the ID is valid and not already registered. Otherwise false.
 	*/
-	bool									RegisterLinkedLogID( const FString& LinkedLogID );
-
-	/**
-	* Attempts to Unregister the provided Log ID from the Linked Log IDs.
-	*
-	* @param FString The LinkedLogID to try and unregister.
-	* @return bool True if the ID is valid and already registered. Otherwise false.
-	*/
-	bool									UnregisterLinkedLogID( const FString& LinkedLogID );
+	// TODO: Do not keep this in memory, just store on the server, that's it
+	bool									RegisterLinkedLogID( const FString& LinkedLogID, const FString& Description );
 
 	/**
 	* Attempts to send the provided Log Buffer to the Capsa Server.
@@ -192,7 +210,7 @@ private:
 	FString									LogID;
 	FString									LinkWeb;
 	FString									Expiry;
-	TSet<FString>							LinkedLogIDs;
+	TMap<FString, FString>					LinkedLogIDs;
 
 	TWeakObjectPtr<UCapsaActorComponent>	CapsaActorComponent;
 

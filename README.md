@@ -17,6 +17,12 @@ Primarily use Unreal Code rules, guidelines, formatting etc.
 Headers have tab alignment.
 All properties, functions, classes etc should have comments, including @param and @return, where appropriate.
 
+## Overriding environment
+
+## Enabling Verbose and VeryVerbose logging
+
+TODO `[Core.Log]` in DefaultEngine.ini
+
 ## Enabling in Shipping
 
 Enabling logging in Shipping comes with risks. It is recommended you research and understand these risks before enabling logging in Shipping builds. There is no guarantee this will work flawlessly or require additional steps.

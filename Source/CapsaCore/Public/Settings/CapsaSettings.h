@@ -180,13 +180,13 @@ protected:
 	/**
 	* How often (in seconds) should the Log Device check for log lines or time.
 	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log" )
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log", meta=(Units="Seconds") )
 	float							LogTickRate;
 
 	/**
 	* How fast (in seconds) to perform the log update and upload check.
 	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log" )
+	UPROPERTY( config, EditAnywhere, Category = "Capsa|Log", meta=(Units="Seconds") )
 	float							MaxTimeBetweenLogFlushes;
 
 	/**
@@ -254,23 +254,23 @@ private:
 	*
 	* @return FString Server Base URL that can be used with an Endpoint string to generate the full endpoint URL
 	*/
-	FString							GenerateServerBaseURL() const;
+	inline FString					GenerateServerBaseURL() const;
 
 	
 	/**
 	* Endpoint for receiving a log session ID
 	*/
-	FString							ServerEndpointClientAuth = TEXT("v1/client/auth");
+	static inline const FString		ServerEndpointClientAuth = TEXT("v1/client/auth");
 
 	/**
 	* Endpoint for sending a log chunk
 	*/
-	FString							ServerEndpointClientLogChunk = TEXT("v1/client/log/chunk");
+	static inline const FString		ServerEndpointClientLogChunk = TEXT("v1/client/log/chunk");
 
 	/**
 	* Endpoint for sending arbitraty log metadata
 	*/
-	FString							ServerEndpointClientLogMetadata = TEXT("v1/client/log/metadata");
+	static inline const FString		ServerEndpointClientLogMetadata = TEXT("v1/client/log/metadata");
 #pragma endregion SERVER_ENDPOINTS
 
 };

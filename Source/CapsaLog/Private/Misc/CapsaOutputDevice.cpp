@@ -1,6 +1,7 @@
 // Copyright Companion Group, Ltd. Made available under the MIT license
 
 #include "Misc/CapsaOutputDevice.h"
+
 #include "Settings/CapsaSettings.h"
 #include "CapsaCoreSubsystem.h"
 

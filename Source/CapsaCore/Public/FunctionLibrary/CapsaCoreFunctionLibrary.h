@@ -36,5 +36,10 @@ public:
 	UFUNCTION( BlueprintPure, Category = "Capsa|Core" )
 	static FString						GetHostTypeString();
 
+	/**
+	* Converts the ELogVerbosity::Type to a Capsa-compatible verbosity string
+	*
+	* @return FString ELogVerbosity::Type value as a string
+	*/
 	static FString						GetLogVerbosityString( ELogVerbosity::Type Verbosity );
 };

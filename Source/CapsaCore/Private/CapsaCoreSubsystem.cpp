@@ -1,8 +1,11 @@
 // Copyright Companion Group, Ltd. Made available under the MIT license
 
 #include "CapsaCoreSubsystem.h"
+
 #include "CapsaCore.h"
 #include "CapsaCoreAsync.h"
+#include "CapsaCoreJson.h"
+#include "JsonObjectConverter.h"
 #include "Components/CapsaActorComponent.h"
 #include "FunctionLibrary/CapsaCoreFunctionLibrary.h"
 #include "Settings/CapsaSettings.h"
@@ -13,6 +16,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/GameModeBase.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(CapsaCoreSubsystem)
 
 
 UCapsaCoreSubsystem::UCapsaCoreSubsystem()
@@ -58,7 +62,12 @@ FString UCapsaCoreSubsystem::GetLogID() const
     return LogID;
 }
 
-bool UCapsaCoreSubsystem::RegisterLinkedLogID( const FString& LinkedLogID )
+FString UCapsaCoreSubsystem::GetLogURL() const
+{
+    return LinkWeb;
+}
+
+bool UCapsaCoreSubsystem::RegisterLinkedLogID( const FString& LinkedLogID, const FString& Description )
 {
     // Don't link with self.
     if( LogID.Equals( LinkedLogID ) == true )
@@ -71,31 +80,10 @@ bool UCapsaCoreSubsystem::RegisterLinkedLogID( const FString& LinkedLogID )
         return false;
     }
 
-    LinkedLogIDs.Add( LinkedLogID );
-    RequestSendMetadata();
-    return true;
-}
-
-bool UCapsaCoreSubsystem::UnregisterLinkedLogID( const FString& LinkedLogID )
-{
-    // Don't link with self.
-    if( LogID.Equals( LinkedLogID ) == true )
-    {
-        return false;
-    }
-
-    if( LinkedLogIDs.Contains( LinkedLogID ) == false )
-    {
-        return false;
-    }
-
-    LinkedLogIDs.Remove( LinkedLogID );
+    UE_LOG( LogCapsaCore, Log, TEXT( "UCapsaCoreSubsystem::RegisterLinkedLogID | Registering LinkedLogID: %s" ), *LinkedLogID );
     
-    if( LinkedLogIDs.IsEmpty() == false )
-    {
-        RequestSendMetadata();
-    }
-
+    LinkedLogIDs.Add( LinkedLogID, Description );
+    RequestSendMetadata();
     return true;
 }
 
@@ -150,6 +138,7 @@ void UCapsaCoreSubsystem::RequestClientAuth()
     JsonObject->SetStringField( TEXT( "key" ), CapsaSettings->GetCapsaEnvironmentKey() );
     JsonObject->SetStringField( TEXT( "platform" ), UCapsaCoreFunctionLibrary::GetPlatformString() );
     JsonObject->SetStringField( TEXT( "type" ), UCapsaCoreFunctionLibrary::GetHostTypeString() );
+
     FString AuthContent;
     TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create( &AuthContent, 0 );
     FJsonSerializer::Serialize( JsonObject.ToSharedRef(), Writer );
@@ -174,11 +163,14 @@ void UCapsaCoreSubsystem::ClientAuthResponse( FHttpRequestPtr Request, FHttpResp
     if( JsonObject != nullptr && JsonObject.IsValid() == true )
     {
         Token = JsonObject->GetStringField( TEXT( "token" ) );
-        LogID = JsonObject->GetStringField( TEXT( "log_id" ) );
-        LinkWeb = JsonObject->GetStringField( TEXT( "link_web" ) );
+        LogID = JsonObject->GetStringField( TEXT( "logId" ) );
+        LinkWeb = JsonObject->GetStringField( TEXT( "linkWeb" ) );
         Expiry = JsonObject->GetStringField( TEXT( "expiry" ) );
 
         UE_LOG( LogCapsaCore, Log, TEXT( "Capsa ID: %s | CapsaLogURL: %s" ), *LogID, *LinkWeb);
+
+        OnAuthChanged.Broadcast( LogID, LinkWeb );
+        OnAuthChangedDynamic.Broadcast( LogID, LinkWeb );
 
         return;
     }
@@ -252,7 +244,7 @@ void UCapsaCoreSubsystem::RequestSendMetadata()
     const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
     if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
     {
-        UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::RequestSendMetadata | Failed to load CapsaSettings." ) );
+        UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::RequestSendMetadata | Failed to load CapsaSettings" ) );
         return;
     }
 
@@ -266,28 +258,23 @@ void UCapsaCoreSubsystem::RequestSendMetadata()
     LogRequest->SetVerb( "POST" );
     LogRequest->SetHeader( "Authorization", LogAuthHeader );
     LogRequest->AppendToHeader( "Content-Type", "application/json" );
-    
-    TSharedPtr<FJsonObject> JsonObject = MakeShareable( new FJsonObject );
-    TArray<TSharedPtr<FJsonValue>> LinkedLogs;
-    for( FString LinkedLogID : LinkedLogIDs )
-    {
-        TSharedPtr<FJsonValueString> JsonLinkedLogID = MakeShareable( new FJsonValueString( LinkedLogID ) );
-        LinkedLogs.Add( JsonLinkedLogID );
-    }
-    JsonObject->SetArrayField( TEXT( "log_links" ), LinkedLogs );
-    
-    // FIXME: Add support
-    TArray<TSharedPtr<FJsonValue>> AdditionalMetadata;
-    // Loop/Add Metadata
-    JsonObject->SetArrayField( TEXT( "additional_metadata" ), AdditionalMetadata );
-    
+
+    FCapsaMetadataRequest MetadataRequest {};
+    MetadataRequest.LinkedLogs = LinkedLogIDs;
+    // MetadataRequest.AdditionalMetadata = TODO
+
     FString MetadataContent;
-    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create( &MetadataContent, 0 );
-    FJsonSerializer::Serialize( JsonObject.ToSharedRef(), Writer );
+    if( FJsonObjectConverter::UStructToJsonObjectString( MetadataRequest, MetadataContent ) == false )
+    {
+        UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::RequestSendMetadata | FJsonObjectConverter::UStructToJsonObjectString has failed" ) );
+    }
     
     LogRequest->SetContentAsString( MetadataContent );
     LogRequest->OnProcessRequestComplete().BindUObject( this, &UCapsaCoreSubsystem::LogResponse );
     LogRequest->ProcessRequest();
+
+    // Cleanup
+    LinkedLogIDs.Empty();
 }
 
 void UCapsaCoreSubsystem::MetadataResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
@@ -442,18 +429,23 @@ void UCapsaCoreSubsystem::OpenServerLogInBrowser()
 
     if( CapsaCore->CapsaActorComponent.IsValid() == false )
     {
-        UE_LOG( LogCapsaCore, Error, TEXT( "Unable to open Server Log in Browser: Unable to GET Server LogID." ) );
+        UE_LOG( LogCapsaCore, Error, TEXT( "Unable to open Server Log in Browser: CapsaActorComponent is not valid" ) );
         return;
     }
 
-    //FString LogURL = CapsaCore->GetCapsaLogURL( CapsaCore->CapsaActorComponent->CapsaServerId );
-    //UCapsaCoreSubsystem::OpenBrowser( LogURL );
-    // FIXME: Reimplement
+    if( CapsaCore->CapsaActorComponent->CapsaServerData.LogURL.IsEmpty() == true )
+    {
+        UE_LOG( LogCapsaCore, Error, TEXT( "Unable to open Server Log in Browser: CapsaActorComponent->CapsaServerData.LogURL is empty" ) );
+        return;
+    }
+
+    FString LogURL = CapsaCore->CapsaActorComponent->CapsaServerData.LogURL;
+    UCapsaCoreSubsystem::OpenBrowser( LogURL );
 }
 
 void UCapsaCoreSubsystem::OpenBrowser( FString URL )
 {
-    FPlatformProcess::LaunchURL( *URL, NULL, NULL );
+    FPlatformProcess::LaunchURL( *URL, nullptr, nullptr );
 }
 
 static FAutoConsoleCommand CVarCapsaViewClientLog(

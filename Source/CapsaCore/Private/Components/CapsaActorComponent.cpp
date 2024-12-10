@@ -1,15 +1,29 @@
 // Copyright Companion Group, Ltd. Made available under the MIT license
 
-
 #include "Components/CapsaActorComponent.h"
+
 #include "CapsaCore.h"
 #include "CapsaCoreSubsystem.h"
 
 #include "Net/UnrealNetwork.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(CapsaActorComponent)
+
+
+FString GetDefaultDescription( bool bIsServer )
+{
+#if UE_SERVER
+	return TEXT("DedicatedServer");
+#elif UE_EDITOR
+	return TEXT("Editor");
+#else
+	return bIsServer ? TEXT("ListenServer") : TEXT("Player");
+#endif
+}
 
 UCapsaActorComponent::UCapsaActorComponent()
-	: CapsaId( "" )
+	: CapsaServerData( FCapsaSharedData{} )
+	, CapsaData( FCapsaSharedData{} )
 {
 	SetIsReplicatedByDefault( true );
 	SetAutoActivate( true );
@@ -19,85 +33,115 @@ void UCapsaActorComponent::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>
 {
 	Super::GetLifetimeReplicatedProps( OutLifetimeProps );
 
-	DOREPLIFETIME( UCapsaActorComponent, CapsaId );
-	DOREPLIFETIME( UCapsaActorComponent, CapsaServerId );
+	// DOREPLIFETIME( UCapsaActorComponent, CapsaData );
+	DOREPLIFETIME( UCapsaActorComponent, CapsaServerData );
 }
 
-void UCapsaActorComponent::SERVER_SetCapsaId_Implementation( const FString& NewCapsaId )
+void UCapsaActorComponent::ServerRegisterLinkedCapsaLog_Implementation( const FCapsaSharedData& ClientCapsaData )
 {
-	FString OldCapsaId = CapsaId;
-	CapsaId = NewCapsaId;
+	FString OldCapsaId = CapsaData.LogID;
+	FString NewCapsaId = ClientCapsaData.LogID;
 
-	// OnRep's aren't called on Servers: call it manually.
-	if( GetNetMode() < NM_Client )
+	CapsaData = ClientCapsaData;
+
+	UE_LOG( LogCapsaCore, Log, TEXT("UCapsaActorComponent::ServerRegisterLinkedCapsaLog_Implementation | OldCapsaId: %s, NewCapsaId: %s"), *OldCapsaId, *NewCapsaId );
+
+	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
+	if( CapsaCoreSubsystem == nullptr )
 	{
-		OnCapsaIdUpdated( OldCapsaId );
+		UE_LOG( LogCapsaCore, Error, TEXT("UCapsaActorComponent::OnCapsaServerDataUpdated | CapsaCoreSubsystem is nullptr") );
+		return;
 	}
 
-	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::SERVER_SetCapsaId_Implementation | OldCapsaId: %s, NewCapsaId: %s"), *OldCapsaId, *NewCapsaId );
+	UE_LOG( LogCapsaCore, Log, TEXT("UCapsaActorComponent::ServerRegisterLinkedCapsaLog_Implementation | Adding linked log with ID: %s, Description: %s"), *ClientCapsaData.LogID, *ClientCapsaData.Description );
+	
+	CapsaCoreSubsystem->RegisterLinkedLogID( ClientCapsaData.LogID, ClientCapsaData.Description );
 }
 
-void UCapsaActorComponent::OnCapsaIdUpdated( FString OldCapsaId )
+void UCapsaActorComponent::OnRep_CapsaServerData()
 {
 	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
 	if( CapsaCoreSubsystem == nullptr )
 	{
+		UE_LOG( LogCapsaCore, Error, TEXT("UCapsaActorComponent::OnCapsaServerDataUpdated | CapsaCoreSubsystem is nullptr") );
 		return;
 	}
 
-	CapsaCoreSubsystem->RegisterLinkedLogID( CapsaId );
+	CapsaCoreSubsystem->RegisterLinkedLogID( CapsaServerData.LogID, CapsaServerData.Description );
 
-	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::OnCapsaIdUpdated | CapsaId Updated: %s"), *CapsaId );
-}
-
-void UCapsaActorComponent::OnCapsaServerIdUpdated( FString OldCapsaServerId )
-{
-	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
-	if( CapsaCoreSubsystem == nullptr )
-	{
-		return;
-	}
-
-	CapsaCoreSubsystem->RegisterLinkedLogID( CapsaServerId );
-
-	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::OnCapsaServerIdUpdated | CapsaServerId Updated: %s"), *CapsaServerId );
+	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::OnCapsaServerDataUpdated | CapsaServerId Updated: %s"), *CapsaServerData.ToString() );
 }
 
 void UCapsaActorComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::BeginPlay | Begin Play") );
+	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::BeginPlay | Start procedure") );
 
 	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
 	if( CapsaCoreSubsystem == nullptr )
 	{
+		UE_LOG( LogCapsaCore, Error, TEXT("UCapsaActorComponent::BeginPlay | CapsaCoreSubsystem is nullptr") );
 		return;
 	}
 
-	FString CapsaLogId = CapsaCoreSubsystem->GetLogID();
+	// Add a callback for whenever the authentication changes
+	CapsaCoreSubsystem->OnAuthChanged.AddUObject( this, &UCapsaActorComponent::OnAuthenticationDelegate );
 
-	if( GetNetMode() < NM_Client )
-	{
-		CapsaServerId = CapsaLogId;
-		OnCapsaServerIdUpdated( TEXT( "" ) );
-	}
+	// Populate the data with the currently present data
+	FString CapsaLogId = CapsaCoreSubsystem->GetLogID();
+	FString CapsaLogURL = CapsaCoreSubsystem->GetLogURL();
+
+	bool bIsServer = GetIsServer();
 	
-	// Will only reach the server on connections we are authorized to do so.
-	SERVER_SetCapsaId( CapsaLogId );
+	CapsaData = FCapsaSharedData(
+		CapsaLogId,
+		CapsaLogURL,
+		GetDefaultDescription( bIsServer )
+	);
+
+	if( CapsaData.IsEmpty() == true )
+	{
+		UE_LOG( LogCapsaCore, Warning, TEXT("UCapsaActorComponent::BeginPlay | CapsaData.IsEmpty() == true, not sending data") );
+		return;
+	}
+
+	// We have authentication, manually call replication logic
+	OnAuthenticationDelegate(CapsaLogId, CapsaLogURL);
 }
 
 void UCapsaActorComponent::EndPlay( EEndPlayReason::Type EndPlayReason )
 {
-	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::BeginPlay | End Play") );
+	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::EndPlay | End Play") );
 
 	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
 	if( CapsaCoreSubsystem == nullptr )
 	{
+		UE_LOG( LogCapsaCore, Error, TEXT("UCapsaActorComponent::EndPlay | CapsaCoreSubsystem is nullptr") );
 		return;
 	}
 
-	CapsaCoreSubsystem->UnregisterLinkedLogID( CapsaId );
-
 	Super::EndPlay( EndPlayReason );
 }
+
+void UCapsaActorComponent::OnAuthenticationDelegate( const FString& LogId, const FString& LogURL )
+{
+	CapsaData.LogID = LogId;
+	CapsaData.LogURL = LogURL;
+
+	UE_LOG( LogCapsaCore, Log, TEXT("UCapsaActorComponent::OnAuthenticationDelegate | After updating authentication data: %s"), *CapsaData.ToString() );
+	
+	bool bIsServer = GetIsServer();
+	
+	if( bIsServer )
+	{
+		CapsaServerData = CapsaData;
+		OnRep_CapsaServerData(); // Replicate to clients
+		UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::OnAuthenticationDelegate | OnRep_CapsaServerData called"));
+	}
+	
+	// Will only reach the server on connections we are authorized to do so.
+	// This will trigger the server to add a log link to the joined client
+	ServerRegisterLinkedCapsaLog( CapsaData );
+}
+
