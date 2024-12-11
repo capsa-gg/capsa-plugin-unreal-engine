@@ -81,12 +81,17 @@ bool FCapsaOutputDevice::Tick( float Seconds )
 
 	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
 	if( CapsaCoreSubsystem != nullptr &&
-		CapsaCoreSubsystem->IsValidLowLevelFast() == true &&
-		CapsaCoreSubsystem->IsAuthenticated() == true )
+		CapsaCoreSubsystem->IsValidLowLevelFast() == true)
 	{
-		TArray<FBufferedLine> BufferToSend;
-		GetContents( BufferToSend );
-		CapsaCoreSubsystem->SendLog( BufferToSend );
+		if( CapsaCoreSubsystem->IsAuthenticated() == true )
+		{
+			TArray<FBufferedLine> BufferToSend;
+			GetContents( BufferToSend );
+			CapsaCoreSubsystem->SendLog( BufferToSend );
+		} else // Trigger authentication attempt
+		{
+			CapsaCoreSubsystem->RequestClientAuth();
+		}
 	}
 
 	LastUpdateTime = Now;

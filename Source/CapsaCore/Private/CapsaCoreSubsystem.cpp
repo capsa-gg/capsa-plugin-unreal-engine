@@ -52,6 +52,13 @@ void UCapsaCoreSubsystem::Deinitialize()
 	Super::Deinitialize();
 }
 
+void UCapsaCoreSubsystem::RegisterMetadataString( const FString& Key, const FString& Value )
+{
+    TSharedPtr<FJsonValueString> JsonValue = MakeShared<FJsonValueString>( Value );
+    RegisterAdditionalMetadata( Key, JsonValue );
+    UE_LOG( LogCapsaCore, VeryVerbose, TEXT("UCapsaCoreSubsystem::RegisterMetadata | Registered metadata with key: %s, value :%s"), *Key, *Value );
+}
+
 bool UCapsaCoreSubsystem::IsAuthenticated() const
 {
     return ( Token.IsEmpty() == false ) && ( LogID.IsEmpty() == false );
@@ -87,6 +94,13 @@ bool UCapsaCoreSubsystem::RegisterLinkedLogID( const FString& LinkedLogID, const
     return true;
 }
 
+void UCapsaCoreSubsystem::RegisterAdditionalMetadata( const FString& Key, const TSharedPtr<FJsonValue>& Value )
+{
+    AdditionalMetadata.Add( Key, Value );
+    UE_LOG( LogCapsaCore, VeryVerbose, TEXT( "UCapsaCoreSubsystem::RegisterAdditionalMetadata | Added metadata with key %s" ), *Key );
+    RequestSendMetadata();
+}
+
 void UCapsaCoreSubsystem::SendLog( TArray<FBufferedLine>& LogBuffer )
 {
     const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
@@ -120,6 +134,8 @@ void UCapsaCoreSubsystem::SendLog( TArray<FBufferedLine>& LogBuffer )
 
 void UCapsaCoreSubsystem::RequestClientAuth()
 {
+    UE_LOG( LogCapsaCore, Verbose, TEXT( "UCapsaCoreSubsystem::RequestClientAuth | Starting client authentication" ) );
+    
     const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
     if( CapsaSettings == nullptr || CapsaSettings->IsValidLowLevelFast() == false )
     {
@@ -132,19 +148,20 @@ void UCapsaCoreSubsystem::RequestClientAuth()
         return;
     }
 
-    FString AuthURL = CapsaSettings->GetServerEndpointClientAuth();
-
-    TSharedPtr<FJsonObject> JsonObject = MakeShareable( new FJsonObject );
-    JsonObject->SetStringField( TEXT( "key" ), CapsaSettings->GetCapsaEnvironmentKey() );
-    JsonObject->SetStringField( TEXT( "platform" ), UCapsaCoreFunctionLibrary::GetPlatformString() );
-    JsonObject->SetStringField( TEXT( "type" ), UCapsaCoreFunctionLibrary::GetHostTypeString() );
-
+    FCapsaAuthenticationRequest AuthenticationRequest = FCapsaAuthenticationRequest(
+        CapsaSettings->GetCapsaEnvironmentKey(),
+        UCapsaCoreFunctionLibrary::GetPlatformString(),
+        UCapsaCoreFunctionLibrary::GetHostTypeString()
+    );
+    
     FString AuthContent;
-    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create( &AuthContent, 0 );
-    FJsonSerializer::Serialize( JsonObject.ToSharedRef(), Writer );
+    if( FJsonObjectConverter::UStructToJsonObjectString( AuthenticationRequest, AuthContent ) == false )
+    {
+        UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::RequestClientAuth | FJsonObjectConverter::UStructToJsonObjectString has failed" ) );
+    }
 
     FHttpRequestRef ClientAuthRequest = FHttpModule::Get().CreateRequest();
-    ClientAuthRequest->SetURL( AuthURL );
+    ClientAuthRequest->SetURL( CapsaSettings->GetServerEndpointClientAuth() );
     ClientAuthRequest->SetVerb( "POST" );
     ClientAuthRequest->SetHeader( "Content-Type", "application/json" );
     ClientAuthRequest->SetContentAsString( AuthContent );
@@ -152,30 +169,6 @@ void UCapsaCoreSubsystem::RequestClientAuth()
     ClientAuthRequest->ProcessRequest();
 
     UE_LOG( LogCapsaCore, Log, TEXT("UCapsaCoreSubsystem::RequestClientAuth | Authentication request sent") );
-}
-
-void UCapsaCoreSubsystem::ClientAuthResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
-{
-    UE_LOG( LogCapsaCore, Log, TEXT("UCapsaCoreSubsystem::ClientAuthResponse | Authentication resonse received sent") );
-
-    TSharedPtr<FJsonObject> JsonObject = ProcessResponse( TEXT( "UCapsaCoreSubsystem::ClientAuthResponse" ), Request, Response, bSuccess );
-
-    if( JsonObject != nullptr && JsonObject.IsValid() == true )
-    {
-        Token = JsonObject->GetStringField( TEXT( "token" ) );
-        LogID = JsonObject->GetStringField( TEXT( "logId" ) );
-        LinkWeb = JsonObject->GetStringField( TEXT( "linkWeb" ) );
-        Expiry = JsonObject->GetStringField( TEXT( "expiry" ) );
-
-        UE_LOG( LogCapsaCore, Log, TEXT( "Capsa ID: %s | CapsaLogURL: %s" ), *LogID, *LinkWeb);
-
-        OnAuthChanged.Broadcast( LogID, LinkWeb );
-        OnAuthChangedDynamic.Broadcast( LogID, LinkWeb );
-
-        return;
-    }
-
-    UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::ClientAuthResponse | Failed to parse JSON." ) );
 }
 
 void UCapsaCoreSubsystem::RequestSendLog( const FString& Log )
@@ -189,19 +182,16 @@ void UCapsaCoreSubsystem::RequestSendLog( const FString& Log )
         return;
     }
 
-    FString LogURL = CapsaSettings->GetServerEndpointClientLogChunk();
-
-    FString LogAuthHeader = TEXT( "Bearer " );
-    LogAuthHeader.Append( Token );
-
     FHttpRequestRef LogRequest = FHttpModule::Get().CreateRequest();
-    LogRequest->SetURL( LogURL );
+    LogRequest->SetURL( CapsaSettings->GetServerEndpointClientLogChunk() );
     LogRequest->SetVerb( "POST" );
-    LogRequest->SetHeader( "Authorization", LogAuthHeader );
+    LogRequest->SetHeader( "Authorization", GetAuthHeader() );
     LogRequest->SetHeader( "Content-Type", "text/plain" );
     LogRequest->SetContentAsString( Log );
     LogRequest->OnProcessRequestComplete().BindUObject( this, &UCapsaCoreSubsystem::LogResponse );
     LogRequest->ProcessRequest();
+
+    UE_LOG( LogCapsaCore, VeryVerbose, TEXT("UCapsaCoreSubsystem::RequestSendLog | Log sent") );
 }
 
 void UCapsaCoreSubsystem::RequestSendCompressedLog( const TArray<uint8>& CompressedLog )
@@ -215,26 +205,16 @@ void UCapsaCoreSubsystem::RequestSendCompressedLog( const TArray<uint8>& Compres
         return;
     }
 
-    FString LogURL = *CapsaSettings->GetServerEndpointClientLogChunk();
-
-    FString LogAuthHeader = TEXT( "Bearer " );
-    LogAuthHeader.Append( Token );
-
     FHttpRequestRef LogRequest = FHttpModule::Get().CreateRequest();
-    LogRequest->SetURL( LogURL );
+    LogRequest->SetURL( CapsaSettings->GetServerEndpointClientLogChunk() );
     LogRequest->SetVerb( "POST" );
-    LogRequest->SetHeader( "Authorization", LogAuthHeader );
+    LogRequest->SetHeader( "Authorization", GetAuthHeader() );
     LogRequest->SetHeader( "Content-Type", "application/zlib" );
     LogRequest->SetContent( CompressedLog );
     LogRequest->OnProcessRequestComplete().BindUObject( this, &UCapsaCoreSubsystem::LogResponse );
     LogRequest->ProcessRequest();
-}
 
-void UCapsaCoreSubsystem::LogResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
-{
-    UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::LogResponse | Log chunk stored") );
-
-    ProcessResponse( TEXT( "UCapsaCoreSubsystem::LogResponse" ), Request, Response, bSuccess );
+    UE_LOG( LogCapsaCore, VeryVerbose, TEXT("UCapsaCoreSubsystem::RequestSendCompressedLog | Compressed log sent") );
 }
 
 void UCapsaCoreSubsystem::RequestSendMetadata()
@@ -247,39 +227,82 @@ void UCapsaCoreSubsystem::RequestSendMetadata()
         UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::RequestSendMetadata | Failed to load CapsaSettings" ) );
         return;
     }
-
-    FString MetadataURL = CapsaSettings->GetServerEndpointClientLogMetadata();
-
-    FString LogAuthHeader = TEXT( "Bearer " );
-    LogAuthHeader.Append( Token );
-
-    FHttpRequestRef LogRequest = FHttpModule::Get().CreateRequest();
-    LogRequest->SetURL( MetadataURL );
-    LogRequest->SetVerb( "POST" );
-    LogRequest->SetHeader( "Authorization", LogAuthHeader );
-    LogRequest->AppendToHeader( "Content-Type", "application/json" );
-
-    FCapsaMetadataRequest MetadataRequest {};
-    MetadataRequest.LinkedLogs = LinkedLogIDs;
-    // MetadataRequest.AdditionalMetadata = TODO
+    
+    TSharedPtr<FJsonObject> JsonObject = MakeShareable( new FJsonObject );
+    JsonObject->SetObjectField( TEXT( "linkedLogs" ), UCapsaCoreJsonHelpers::TMapToJsonObject(LinkedLogIDs) );
+    JsonObject->SetObjectField( TEXT( "additionalMetadata" ), UCapsaCoreJsonHelpers::TMapToJsonObject(AdditionalMetadata) );
 
     FString MetadataContent;
-    if( FJsonObjectConverter::UStructToJsonObjectString( MetadataRequest, MetadataContent ) == false )
-    {
-        UE_LOG( LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::RequestSendMetadata | FJsonObjectConverter::UStructToJsonObjectString has failed" ) );
-    }
-    
+    TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create( &MetadataContent, 0 );
+    FJsonSerializer::Serialize( JsonObject.ToSharedRef(), Writer );
+
+    FHttpRequestRef LogRequest = FHttpModule::Get().CreateRequest();
+    LogRequest->SetURL( CapsaSettings->GetServerEndpointClientLogMetadata() );
+    LogRequest->SetVerb( "POST" );
+    LogRequest->SetHeader( "Authorization", GetAuthHeader() );
+    LogRequest->AppendToHeader( "Content-Type", "application/json" );
     LogRequest->SetContentAsString( MetadataContent );
     LogRequest->OnProcessRequestComplete().BindUObject( this, &UCapsaCoreSubsystem::LogResponse );
     LogRequest->ProcessRequest();
 
-    // Cleanup
-    LinkedLogIDs.Empty();
+    UE_LOG (LogCapsaCore, VeryVerbose, TEXT("UCapsaCoreSubsystem::RequestSendMetadata | Metadata sent") );
+}
+
+void UCapsaCoreSubsystem::ClientAuthResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
+{
+    UE_LOG( LogCapsaCore, Log, TEXT("UCapsaCoreSubsystem::ClientAuthResponse | Authentication resonse received sent") );
+
+    TSharedPtr<FJsonObject> JsonObject = ProcessResponse( TEXT( "UCapsaCoreSubsystem::ClientAuthResponse" ), Request, Response, bSuccess );
+    if( JsonObject == nullptr || JsonObject.IsValid() == false )
+    {
+        UE_LOG( LogCapsaCore, Warning, TEXT( "UCapsaCoreSubsystem::ClientAuthResponse | Invalid JSON object" ) );
+        return;
+    }
+    
+    FCapsaAuthenticationResponse AuthenticationResponse;
+    if ( FJsonObjectConverter::JsonObjectToUStruct( JsonObject.ToSharedRef(), &AuthenticationResponse ) == false )
+    {
+        UE_LOG( LogCapsaCore, Warning, TEXT( "UCapsaCoreSubsystem::ClientAuthResponse | FJsonObjectConverter::JsonObjectToUStruc failed" ) );
+        return;
+    };
+
+    // Set the authentication data if the current data is empty
+    if( Token.IsEmpty() || LogID.IsEmpty() || LinkWeb.IsEmpty() )
+    {
+        UE_LOG( LogCapsaCore, Verbose, TEXT( "UCapsaCoreSubsystem::ClientAuthResponse | Authentication info not present, setting values" ) );
+        Token = AuthenticationResponse.Token;
+        LogID = AuthenticationResponse.LogId;
+        LinkWeb = AuthenticationResponse.LinkWeb;
+        Expiry = AuthenticationResponse.Expiry;
+        UE_LOG( LogCapsaCore, Log, TEXT( "UCapsaCoreSubsystem::ClientAuthResponse | Capsa ID: %s | CapsaLogURL: %s" ), *LogID, *LinkWeb);
+    } else
+    {
+        UE_LOG( LogCapsaCore, Log, TEXT( "UCapsaCoreSubsystem::ClientAuthResponse | Ignoring AuthenticationResponse (CapsaID: %s), as the authentication is already present" ), *LogID );
+    }
+
+    // Broadcast auth changed regardless whether it has changed or not
+    OnAuthChanged.Broadcast( LogID, LinkWeb );
+    OnAuthChangedDynamic.Broadcast( LogID, LinkWeb );
+}
+
+void UCapsaCoreSubsystem::LogResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
+{
+    UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::LogResponse | Log chunk stored") );
+
+    ProcessResponse( TEXT( "UCapsaCoreSubsystem::LogResponse" ), Request, Response, bSuccess );
 }
 
 void UCapsaCoreSubsystem::MetadataResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
 {
     UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::MetadataResponse | Metadata stored") );
+
+    // Remove metadata on success
+    if( bSuccess == true && Response->GetResponseCode() < 299 )
+    {
+        UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::MetadataResponse | Clearing metadata.") );
+        LinkedLogIDs.Empty();
+        AdditionalMetadata.Empty();
+    }
 
     ProcessResponse( TEXT( "UCapsaCoreSubsystem::MetadataResponse" ), Request, Response, bSuccess );
 }

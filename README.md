@@ -37,3 +37,9 @@ BuildEnvironment = TargetBuildEnvironment.Unique
 
 Or if building from precompiled binaries, add:
 bOverrideBuildEnvironment = true;
+
+## Release guide
+
+- Testing
+- Set version
+- Push to public repo

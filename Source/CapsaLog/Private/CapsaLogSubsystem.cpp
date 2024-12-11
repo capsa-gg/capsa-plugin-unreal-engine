@@ -2,10 +2,10 @@
 
 #include "CapsaLogSubsystem.h"
 
+#include "CapsaLog.h"
 #include "Misc/CapsaOutputDevice.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(CapsaLogSubsystem)
-
 
 void UCapsaLogSubsystem::Initialize( FSubsystemCollectionBase& Collection )
 {

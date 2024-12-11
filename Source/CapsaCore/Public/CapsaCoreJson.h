@@ -4,17 +4,54 @@
 
 #include "CapsaCoreJson.generated.h"
 
-// TODO: Can this be removed?
+class UCapsaCoreJsonHelpers
+{
+	public:
+
+	static TSharedPtr<FJsonObject>	TMapToJsonObject( const TMap<FString, FString>& Map );
+
+	static TSharedPtr<FJsonObject>	TMapToJsonObject( const TMap<FString, TSharedPtr<FJsonValue>>& Map );
+};
+
 USTRUCT()
-struct FCapsaMetadataRequest
+struct FCapsaAuthenticationRequest
+{
+	GENERATED_BODY()
+
+public:
+
+	FCapsaAuthenticationRequest(){};
+	FCapsaAuthenticationRequest( const FString& InKey, const FString& InPlatform, const FString& InType )
+		: Key( InKey )
+		, Platform( InPlatform )
+		, Type( InType ){};
+
+	UPROPERTY()
+	FString							Key;
+	
+	UPROPERTY()
+	FString							Platform;
+	
+	UPROPERTY()
+	FString							Type;
+};
+
+USTRUCT()
+struct FCapsaAuthenticationResponse
 {
 	GENERATED_BODY()
 
 public:
 
 	UPROPERTY()
-	TMap<FString, FString> LinkedLogs;
+	FString							Token;
 	
 	UPROPERTY()
-	TMap<FString, FString> AdditionalMetadata;
+	FString							LogId;
+	
+	UPROPERTY()
+	FString							LinkWeb;
+	
+	UPROPERTY()
+	FString							Expiry;
 };

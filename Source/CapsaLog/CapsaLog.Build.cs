@@ -33,13 +33,13 @@ public class CapsaLog : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
+				"CapsaCore",
 				"CoreUObject",
+				"DeveloperSettings",
 				"Engine",
 				"HTTP",
 				"Slate",
 				"SlateCore",
-				"DeveloperSettings",
-				"CapsaCore",
 			}
 			);
 		
