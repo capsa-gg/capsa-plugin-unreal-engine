@@ -62,10 +62,15 @@ public:
 	*/
 	FCapsaCoreOnAuthChangedDelegate			OnAuthChanged;
 
-	// Example, needs to be replaced with a generic BP node
+	// TODO(Mark):Example, needs to be replaced with a generic BP node
 	UFUNCTION( BlueprintCallable, Category = "Capsa|Log|CapsaCoreSubsystem|Metadata" )
 	void									RegisterMetadataString(const FString& Key, const FString& Value);
 
+	/**
+	 * Access the FCapsaSharedData as replicated on the CapsaActorComponent.
+	 * 
+	 * @return FCapsaSharedData server data, or empty in case the CapsaActorComponent is not found.
+	 */
 	UFUNCTION( BlueprintPure, Category = "Capsa|Log|CapsaCoreSubsystem|SessionData" )
 	FCapsaSharedData						GetServerCapsaData() const;
 	

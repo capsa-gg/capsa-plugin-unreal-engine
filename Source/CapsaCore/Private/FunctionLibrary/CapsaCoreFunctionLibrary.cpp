@@ -32,13 +32,18 @@ FString UCapsaCoreFunctionLibrary::GetPlatformString()
 	return Platform;
 }
 
-// TODO: Add more HostTypes
 FString UCapsaCoreFunctionLibrary::GetHostTypeString()
 {
-	FString HostType = TEXT( "Client" );
+	FString HostType = TEXT( "Unknown" );
 
-#if UE_SERVER
+#if UE_EDITOR
+	HostType = TEXT( "Editor" );
+#elif WITH_SERVER_CODE
+	HostType = TEXT( "Game" );
+#elif UE_SERVER // Overrides "Game" in case of DS build
 	HostType = TEXT( "Server" );
+#else
+	HostType = TEXT( "Client" );
 #endif
 
 	return HostType;
