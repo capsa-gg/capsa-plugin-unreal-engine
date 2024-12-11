@@ -38,10 +38,10 @@ FString UCapsaCoreFunctionLibrary::GetHostTypeString()
 
 #if UE_EDITOR
 	HostType = TEXT( "Editor" );
+#elif UE_SERVER
+	HostType = TEXT( "Server" );
 #elif WITH_SERVER_CODE
 	HostType = TEXT( "Game" );
-#elif UE_SERVER // Overrides "Game" in case of DS build
-	HostType = TEXT( "Server" );
 #else
 	HostType = TEXT( "Client" );
 #endif
