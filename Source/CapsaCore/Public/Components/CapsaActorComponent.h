@@ -87,17 +87,18 @@ public:
 	void					ServerRegisterLinkedCapsaLog( const FCapsaSharedData& ClientCapsaData );
 	
 	/**
-	 * Replication function for CapsaServerData, which adds the server log ID to linked logs
+	 * Replication function for CapsaServerData, which adds the server log ID to linked logs.
 	 */
 	UFUNCTION()
 	void					OnRep_CapsaServerData();
 
 	/**
-	 * If running on a server, the field contains the server's own data
+	 * If running on a server, the field contains the server's own data.
 	 * If running on a client, the field will contain the data for the connected server.
 	 */
 	UPROPERTY( ReplicatedUsing = OnRep_CapsaServerData )
 	FCapsaSharedData		CapsaServerData;
+	
 
 	// TODO: Add way to modify the description for current instance
 

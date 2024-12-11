@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "Components/CapsaActorComponent.h"
+
 #include "CoreMinimal.h"
 #include "Subsystems/EngineSubsystem.h"
 #include "HttpModule.h"
@@ -12,7 +14,7 @@
 class UCapsaActorComponent;
 
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams( FCapsaCoreOnAuthChangedDynamicDelegate, const FString&, CapsaLogId, const FString&, CapsaLogURL );
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams( FCapsaCoreDataChangedDynamicDelegate, const FString&, CapsaLogId, const FString&, CapsaLogURL );
 DECLARE_MULTICAST_DELEGATE_TwoParams( FCapsaCoreOnAuthChangedDelegate, const FString& /* CapsaLogId */, const FString& /* CapsaLogURL */ );
 
 /**
@@ -44,8 +46,15 @@ public:
 	* Delegate that will be called whenever the authentication changes, for example whenever a log session has been created.
 	* This delegate should be used in Blueprints.
 	*/
-	UPROPERTY( BlueprintAssignable )
-	FCapsaCoreOnAuthChangedDynamicDelegate	OnAuthChangedDynamic;
+	UPROPERTY( BlueprintAssignable, Category = "Capsa|Log|CapsaCoreSubsystem|SessionData" )
+	FCapsaCoreDataChangedDynamicDelegate	OnAuthChangedDynamic;
+
+	/**
+	* Delegate that will be called whenever the client receives the server's Capsa information.
+	* This delegate should be used in Blueprints.
+	*/
+	UPROPERTY( BlueprintAssignable, Category = "Capsa|Log|CapsaCoreSubsystem|SessionData" )
+	FCapsaCoreDataChangedDynamicDelegate	OnServerCapsaDataChangedDynamic;
 
 	/**
 	* Delegate that will be called whenever the authentication changes, for example whenever a log session has been created.
@@ -54,12 +63,13 @@ public:
 	FCapsaCoreOnAuthChangedDelegate			OnAuthChanged;
 
 	// Example, needs to be replaced with a generic BP node
-	UFUNCTION( BlueprintCallable, Category = "Capsa|Log|CapsaLogSubsystem|Metadata" )
+	UFUNCTION( BlueprintCallable, Category = "Capsa|Log|CapsaCoreSubsystem|Metadata" )
 	void									RegisterMetadataString(const FString& Key, const FString& Value);
-	
 
-#pragma region GETTERS
+	UFUNCTION( BlueprintPure, Category = "Capsa|Log|CapsaCoreSubsystem|SessionData" )
+	FCapsaSharedData						GetServerCapsaData() const;
 	
+#pragma region GETTERS
 	/**
 	* Whether we have been Authenticated with the Services.
 	* 
@@ -72,6 +82,7 @@ public:
 	* 
 	* @return FString The LogID.
 	*/
+	UFUNCTION( BlueprintPure, Category = "Capsa|Log|CapsaCoreSubsystem|SessionData" )
 	FString									GetLogID() const;
 
 	/**
@@ -79,12 +90,11 @@ public:
 	* 
 	* @return FString The LogURL.
 	*/
+	UFUNCTION( BlueprintPure, Category = "Capsa|Log|CapsaCoreSubsystem|SessionData" )
 	FString									GetLogURL() const;
-
 #pragma endregion GETTERS
 
 #pragma region APICALLSPUBLIC
-
 	/**
 	* Attempts to send the provided Log Buffer to the Capsa Server.
 	* 
@@ -111,11 +121,9 @@ public:
 	* @param TSharedPtr<FJsonValue> Json value to be stored
 	*/
 	void									RegisterAdditionalMetadata( const FString& Key, const TSharedPtr<FJsonValue>& Description );
-
 #pragma endregion APICALLSPUBLIC
 
 #pragma region BROWSERMETHODS
-	
 	/**
 	* Gets the URL for the Client Log and requests the Operating System launch a Browser
 	* with the corresponding URL.
@@ -127,13 +135,11 @@ public:
 	* with the corresponding URL.
 	*/
 	static void								OpenServerLogInBrowser();
-
 #pragma endregion BROWSERMETHODS
 	
 protected:
 
 #pragma region APICALLSPROTECTED
-
 	/**
 	 * Use the Token to generate the Authentication header value
 	 * 
@@ -158,11 +164,9 @@ protected:
 	* @param Log The FString log to attempt to send.
 	*/
 	void									RequestSendLog( const FString& Log );
-	
 #pragma endregion APICALLSPROTECTED
 	
 #pragma region APIRESPONSES
-
 	/**
 	* Generic HTTP response processing function.
 	* If there is any JSON to gather, will get it out of the Response and return it.
@@ -212,11 +216,9 @@ protected:
 	* @param bSuccess Whether the HTTP response was successful (true) or not (false).
 	*/
 	virtual void							MetadataResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
-
 #pragma endregion APIRESPONSES
 	
 #pragma region UNREAL
-	
 	/**
 	* Called after the Map has loaded with the specified World.
 	* Perform any specific initialization on Actors that are required when there is a valid World. This is also
@@ -243,7 +245,6 @@ protected:
 	* @param Player The Controller for the player that has just left.
 	*/
 	virtual void							OnPlayerLoggedOut( AGameModeBase* GameMode, AController* Controller );
-
 #pragma endregion UNREAL
 	
 private:

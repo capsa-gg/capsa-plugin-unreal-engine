@@ -33,7 +33,6 @@ void UCapsaActorComponent::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>
 {
 	Super::GetLifetimeReplicatedProps( OutLifetimeProps );
 
-	// DOREPLIFETIME( UCapsaActorComponent, CapsaData );
 	DOREPLIFETIME( UCapsaActorComponent, CapsaServerData );
 }
 
@@ -68,8 +67,9 @@ void UCapsaActorComponent::OnRep_CapsaServerData()
 	}
 
 	CapsaCoreSubsystem->RegisterLinkedLogID( CapsaServerData.LogID, CapsaServerData.Description );
-
-	UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::OnCapsaServerDataUpdated | CapsaServerId Updated: %s"), *CapsaServerData.ToString() );
+	CapsaCoreSubsystem->OnServerCapsaDataChangedDynamic.Broadcast( CapsaServerData.LogID, CapsaServerData.LogURL );
+	
+	UE_LOG( LogCapsaCore, Verbose, TEXT( "UCapsaActorComponent::OnCapsaServerDataUpdated | CapsaServerId Updated: %s" ), *CapsaServerData.ToString() );
 }
 
 void UCapsaActorComponent::BeginPlay()
@@ -100,6 +100,8 @@ void UCapsaActorComponent::BeginPlay()
 		GetDefaultDescription( bIsServer )
 	);
 
+	UE_LOG( LogCapsaCore, VeryVerbose, TEXT("UCapsaActorComponent::BeginPlay | CapsaData: %s"), *CapsaData.ToString() )
+
 	if( CapsaData.IsEmpty() == true )
 	{
 		UE_LOG( LogCapsaCore, Warning, TEXT("UCapsaActorComponent::BeginPlay | CapsaData.IsEmpty() == true, not sending data") );
@@ -108,6 +110,13 @@ void UCapsaActorComponent::BeginPlay()
 
 	// We have authentication, manually call replication logic
 	OnAuthenticationDelegate(CapsaLogId, CapsaLogURL);
+
+	if( bIsServer == true )
+	{
+		// When the server receives authentication data, manually broadcast.
+		// Without this, PIE does not correctly display the server UUID.
+		CapsaCoreSubsystem->OnServerCapsaDataChangedDynamic.Broadcast( CapsaServerData.LogID, CapsaServerData.LogURL );	
+	}
 }
 
 void UCapsaActorComponent::EndPlay( EEndPlayReason::Type EndPlayReason )
@@ -137,6 +146,18 @@ void UCapsaActorComponent::OnAuthenticationDelegate( const FString& LogId, const
 	{
 		CapsaServerData = CapsaData;
 		OnRep_CapsaServerData(); // Replicate to clients
+
+		UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
+		if( CapsaCoreSubsystem == nullptr )
+		{
+			UE_LOG( LogCapsaCore, Error, TEXT("UCapsaActorComponent::OnAuthenticationDelegate | CapsaCoreSubsystem is nullptr") );
+		} else
+		{
+			// When the server receives authentication data, manually broadcast.
+			// Without this, PIE does not correctly display the server UUID.
+			CapsaCoreSubsystem->OnServerCapsaDataChangedDynamic.Broadcast( CapsaServerData.LogID, CapsaServerData.LogURL );	
+		}
+		
 		UE_LOG( LogCapsaCore, Verbose, TEXT("UCapsaActorComponent::OnAuthenticationDelegate | OnRep_CapsaServerData called"));
 	}
 	

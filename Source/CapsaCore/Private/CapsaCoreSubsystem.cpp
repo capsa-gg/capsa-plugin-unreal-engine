@@ -6,7 +6,6 @@
 #include "CapsaCoreAsync.h"
 #include "CapsaCoreJson.h"
 #include "JsonObjectConverter.h"
-#include "Components/CapsaActorComponent.h"
 #include "FunctionLibrary/CapsaCoreFunctionLibrary.h"
 #include "Settings/CapsaSettings.h"
 
@@ -57,6 +56,17 @@ void UCapsaCoreSubsystem::RegisterMetadataString( const FString& Key, const FStr
     TSharedPtr<FJsonValueString> JsonValue = MakeShared<FJsonValueString>( Value );
     RegisterAdditionalMetadata( Key, JsonValue );
     UE_LOG( LogCapsaCore, VeryVerbose, TEXT("UCapsaCoreSubsystem::RegisterMetadata | Registered metadata with key: %s, value :%s"), *Key, *Value );
+}
+
+FCapsaSharedData UCapsaCoreSubsystem::GetServerCapsaData() const
+{
+    if( CapsaActorComponent.IsValid() == false )
+    {
+        UE_LOG( LogCapsaCore, Verbose, TEXT( "UCapsaCoreSubsystem::GetServerCapsaData | No valid reference to CapsaActorComponent" ) );
+        return FCapsaSharedData{};
+    }
+
+    return CapsaActorComponent->CapsaServerData;
 }
 
 bool UCapsaCoreSubsystem::IsAuthenticated() const
@@ -279,7 +289,7 @@ void UCapsaCoreSubsystem::ClientAuthResponse( FHttpRequestPtr Request, FHttpResp
     {
         UE_LOG( LogCapsaCore, Log, TEXT( "UCapsaCoreSubsystem::ClientAuthResponse | Ignoring AuthenticationResponse (CapsaID: %s), as the authentication is already present" ), *LogID );
     }
-
+    
     // Broadcast auth changed regardless whether it has changed or not
     OnAuthChanged.Broadcast( LogID, LinkWeb );
     OnAuthChangedDynamic.Broadcast( LogID, LinkWeb );

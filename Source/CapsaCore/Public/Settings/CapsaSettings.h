@@ -49,7 +49,6 @@ public:
 	*
 	* @return FString Endpoint for receiving a log session ID
 	*/
-	UFUNCTION(BlueprintPure, Category = "Capsa|Core")
 	FString							GetServerEndpointClientAuth() const;
 
 	/**
@@ -57,7 +56,6 @@ public:
 	*
 	* @return FString Endpoint for sending a log chunk
 	*/
-	UFUNCTION(BlueprintPure, Category = "Capsa|Core")
 	FString							GetServerEndpointClientLogChunk() const;
 
 	/**
@@ -65,7 +63,6 @@ public:
 	*
 	* @return FString Endpoint for sending arbitrary log metadata
 	*/
-	UFUNCTION(BlueprintPure, Category = "Capsa|Core")
 	FString							GetServerEndpointClientLogMetadata() const;
 #pragma endregion SERVER_ENDPOINTS
 
@@ -75,7 +72,6 @@ public:
 	*
 	* @return float The Log Tick rate (in seconds).
 	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
 	float							GetLogTickRate() const;
 
 	/**
@@ -83,7 +79,6 @@ public:
 	*
 	* @return float The MaxTimeBetweenLogFlushes (in seconds).
 	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
 	float							GetMaxTimeBetweenLogFlushes() const;
 
 	/**
@@ -91,7 +86,6 @@ public:
 	*
 	* @return int32 The MaxLogLinesBetweenLogFlushes.
 	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
 	int32							GetMaxLogLinesBetweenLogFlushes() const;
 
 	/**
@@ -99,7 +93,6 @@ public:
 	*
 	* @return bool Use compression (true) or FString (false).
 	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Log" )
 	bool							GetUseCompression() const;
 
 	/**
@@ -142,15 +135,13 @@ public:
 	*
 	* @return float The Look for Class Time value.
 	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Component" )
 	float							GetLookForClassTime() const;
 
 	/**
-	* Get the number of times to Loop when lookin for AutoAddClass
+	* Get the number of times to Loop when looking for AutoAddClass
 	*
 	* @return int32 The Look for Class Loop Max value.
 	*/
-	UFUNCTION( BlueprintPure, Category = "Capsa|Component" )
 	int32							GetLookForClassLoopMax() const;
 #pragma endregion COMPONENT_FUNCTIONS
 
@@ -243,7 +234,6 @@ protected:
 	*/
 	UPROPERTY( config, EditAnywhere, Category = "Capsa|Component", AdvancedDisplay, Meta = ( EditCondition = "bAutoAddCapsaComponent" ) )
 	int32							LookForClassLoopMax;
-
 #pragma endregion COMPONENT_PROPERTIES
 
 private:
