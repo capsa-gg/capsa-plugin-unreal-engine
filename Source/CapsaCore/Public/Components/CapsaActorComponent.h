@@ -122,8 +122,5 @@ protected:
 	*
 	*  @return bool server status.
     */
-	bool					GetIsServer() const
-	{
-		return GetNetMode() < NM_Client;
-	};
+	bool					GetIsServer() const;
 };
