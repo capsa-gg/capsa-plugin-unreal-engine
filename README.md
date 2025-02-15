@@ -1,8 +1,22 @@
-# Capsa
+# Capsa Unreal Engine plugin
+
+> Open-source, cloud-native logging solution built specifically for Unreal Engine projects. Designed to integrate effortlessly with Unreal Engine to enhance debugging, monitoring, and observability without disrupting your workflow.
 
 This is the Unreal Plugin for capturing and uploading Logs to a Capsa Server. You will need a running Capsa Server (see https://github.com/capsa-gg/capsa).
 
+![GitHub License](https://img.shields.io/github/license/capsa-gg/capsa-plugin-unreal-engine)
+
+## Key Features
+- **Plug & Play**: minimal setup required, works out of the box
+- **Cloud-Native**: deploy anywhere — in the cloud or on-premise
+- **Optimized for Unreal Engine**: extends Unreal Engine's logging without replacing it
+- **Lightweight & Non-Intrusive**: keeps overhead minimal for optimal performance
+
+---
+
 ## Getting started
+
+Instructions for getting started can be found on [capsa.gg](https://capsa.gg/docs/getting-started/).
 
 * Clone the repo to your Unreal Project. 
   If you are in the root of your project, you can run `git clone https://github.com/capsa-gg/capsa-plugin-unreal-engine.git .\Plugins\Capsa`
@@ -17,7 +31,7 @@ Primarily use Unreal Code rules, guidelines, formatting etc.
 Headers have tab alignment.
 All properties, functions, classes etc should have comments, including @param and @return, where appropriate.
 
-## Overriding environment
+## Overriding environment variables
 
 ## Enabling Verbose and VeryVerbose logging
 
