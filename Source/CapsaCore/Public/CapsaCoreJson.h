@@ -20,7 +20,10 @@ struct FCapsaAuthenticationRequest
 
 public:
 
-	FCapsaAuthenticationRequest(){};
+	FCapsaAuthenticationRequest()
+		: Key(TEXT(""))
+		, Platform(TEXT(""))
+		, Type(TEXT("")) {};
 	FCapsaAuthenticationRequest( const FString& InKey, const FString& InPlatform, const FString& InType )
 		: Key( InKey )
 		, Platform( InPlatform )
@@ -40,6 +43,12 @@ USTRUCT()
 struct FCapsaAuthenticationResponse
 {
 	GENERATED_BODY()
+
+	FCapsaAuthenticationResponse()
+		: Token(TEXT(""))
+		, LogId(TEXT(""))
+		, LinkWeb(TEXT(""))
+		, Expiry(TEXT("")) {};
 
 public:
 

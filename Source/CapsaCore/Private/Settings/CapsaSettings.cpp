@@ -7,6 +7,7 @@
 #include UE_INLINE_GENERATED_CPP_BY_NAME(CapsaSettings)
 
 
+// NOTE: If the defaults change, this should be updated on the documentation website.
 UCapsaSettings::UCapsaSettings()
 	: Protocol( "https" )
 	, CapsaServerURL( "" )
@@ -23,8 +24,6 @@ UCapsaSettings::UCapsaSettings()
 	, bWriteToDiskCompressed( false )
 	, bAutoAddCapsaComponent( true )
 	, AutoAddClass( APlayerState::StaticClass() )
-	, LookForClassTime( 1.f )
-	, LookForClassLoopMax( 5 )
 {
 }
 
@@ -106,16 +105,6 @@ bool UCapsaSettings::GetShouldAutoAddCapsaComponent() const
 TSubclassOf<AActor> UCapsaSettings::GetAutoAddClass() const
 {
 	return AutoAddClass;
-}
-
-float UCapsaSettings::GetLookForClassTime() const
-{
-	return LookForClassTime;
-}
-
-int32 UCapsaSettings::GetLookForClassLoopMax() const
-{
-	return LookForClassLoopMax;
 }
 
 FString UCapsaSettings::GenerateServerBaseURL() const

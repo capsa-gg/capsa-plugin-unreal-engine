@@ -61,8 +61,15 @@ public:
 	* This delegate should be used in C++.
 	*/
 	FCapsaCoreOnAuthChangedDelegate			OnAuthChanged;
-
-	// TODO(Mark):Example, needs to be replaced with a generic BP node
+	
+	/**
+	 * @deprecated This will be removed and replaced with a generic K2 node to add arbitrary metadata. This function should not be used in Blueprints.
+	 *
+	 * Register a FString Value for the given Key in the metadata.
+	 * 
+	 * @param Key Metadata Key
+	 * @param Value Metadata value 
+	 */
 	UFUNCTION( BlueprintCallable, Category = "Capsa|Log|CapsaCoreSubsystem|Metadata" )
 	void									RegisterMetadataString(const FString& Key, const FString& Value);
 
@@ -120,7 +127,7 @@ public:
 	bool									RegisterLinkedLogID( const FString& LinkedLogID, const FString& Description );
 
 	/**
-	* Attempts to Register the provided Log ID as a Linked Log ID.
+	* Attempts to Register the provided JsonValue to the given Key which will be sent to the server for metadata storage. 
 	* 
 	* @param FString Metadata key
 	* @param TSharedPtr<FJsonValue> Json value to be stored
@@ -254,7 +261,7 @@ protected:
 	
 private:
 
-	static void								OpenBrowser( FString URL );
+	static void								OpenBrowser( const FString& URL );
 
 	FDelegateHandle							OnPostWorldInitializationHandle;
 

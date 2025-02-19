@@ -320,7 +320,7 @@ void UCapsaCoreSubsystem::MetadataResponse( FHttpRequestPtr Request, FHttpRespon
 TSharedPtr<FJsonObject> UCapsaCoreSubsystem::ProcessResponse( const FString& RequestName, FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess )
 {
     // Exit early if request failed
-    if( !bSuccess == true )
+    if( bSuccess == false )
     {
         UE_LOG( LogCapsaCore, Error, TEXT("%s | HTTP Request Failed: %s."), *RequestName, (Response == nullptr || Response.IsValid() == false) ? TEXT("Invalid Response Ptr") : *Response->GetContentAsString() );
         return nullptr;
@@ -476,7 +476,7 @@ void UCapsaCoreSubsystem::OpenServerLogInBrowser()
     UCapsaCoreSubsystem::OpenBrowser( LogURL );
 }
 
-void UCapsaCoreSubsystem::OpenBrowser( FString URL )
+void UCapsaCoreSubsystem::OpenBrowser( const FString& URL )
 {
     FPlatformProcess::LaunchURL( *URL, nullptr, nullptr );
 }

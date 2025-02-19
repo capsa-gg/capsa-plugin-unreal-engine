@@ -221,19 +221,6 @@ protected:
 	*/
 	UPROPERTY( config, EditAnywhere, Category = "Capsa|Component", Meta=(EditCondition="bAutoAddCapsaComponent" ) )
 	TSubclassOf<AActor>				AutoAddClass;
-
-	/**
-	* How often, in seconds, should the Timer loop to look for the AutoAddClass.
-	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Component", AdvancedDisplay, Meta = ( EditCondition = "bAutoAddCapsaComponent" ) )
-	float							LookForClassTime;
-
-	/**
-	* How many times should the Timer look for a matching class.
-	* Prevents infinite looping.
-	*/
-	UPROPERTY( config, EditAnywhere, Category = "Capsa|Component", AdvancedDisplay, Meta = ( EditCondition = "bAutoAddCapsaComponent" ) )
-	int32							LookForClassLoopMax;
 #pragma endregion COMPONENT_PROPERTIES
 
 private:
