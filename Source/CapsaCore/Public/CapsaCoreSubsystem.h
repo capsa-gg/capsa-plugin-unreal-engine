@@ -18,13 +18,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams( FCapsaCoreDataChangedDynamicDelega
 DECLARE_MULTICAST_DELEGATE_TwoParams( FCapsaCoreOnAuthChangedDelegate, const FString& /* CapsaLogId */, const FString& /* CapsaLogURL */ );
 
 /**
- * 
+ *
  */
 UCLASS()
 class CAPSACORE_API UCapsaCoreSubsystem : public UEngineSubsystem
 {
 	GENERATED_BODY()
-	
+
 public:
 
 	UCapsaCoreSubsystem();
@@ -33,7 +33,7 @@ public:
 	virtual void							Initialize( FSubsystemCollectionBase& Collection ) override;
 	virtual void							Deinitialize() override;
 	// End USubsystem
-	
+
 	/**
 	* Request a Capsa Auth Token.
 	* Builds the response based off details in CapsaSettings. Check and set these in the Editor
@@ -61,37 +61,37 @@ public:
 	* This delegate should be used in C++.
 	*/
 	FCapsaCoreOnAuthChangedDelegate			OnAuthChanged;
-	
+
 	/**
 	 * @deprecated This will be removed and replaced with a generic K2 node to add arbitrary metadata. This function should not be used in Blueprints.
 	 *
 	 * Register a FString Value for the given Key in the metadata.
-	 * 
+	 *
 	 * @param Key Metadata Key
-	 * @param Value Metadata value 
+	 * @param Value Metadata value
 	 */
 	UFUNCTION( BlueprintCallable, Category = "Capsa|Log|CapsaCoreSubsystem|Metadata" )
-	void									RegisterMetadataString(const FString& Key, const FString& Value);
+	void									RegisterMetadataString( const FString& Key, const FString& Value );
 
 	/**
 	 * Access the FCapsaSharedData as replicated on the CapsaActorComponent.
-	 * 
+	 *
 	 * @return FCapsaSharedData server data, or empty in case the CapsaActorComponent is not found.
 	 */
 	UFUNCTION( BlueprintPure, Category = "Capsa|Log|CapsaCoreSubsystem|SessionData" )
 	FCapsaSharedData						GetServerCapsaData() const;
-	
+
 #pragma region GETTERS
 	/**
 	* Whether we have been Authenticated with the Services.
-	* 
+	*
 	* @return bool True if authenticated, otherwise false.
 	*/
 	bool									IsAuthenticated() const;
 
 	/**
 	* Returns the LogID of the currently active connection.
-	* 
+	*
 	* @return FString The LogID.
 	*/
 	UFUNCTION( BlueprintPure, Category = "Capsa|Log|CapsaCoreSubsystem|SessionData" )
@@ -99,7 +99,7 @@ public:
 
 	/**
 	* Returns the LogURL of the currently active connection.
-	* 
+	*
 	* @return FString The LogURL.
 	*/
 	UFUNCTION( BlueprintPure, Category = "Capsa|Log|CapsaCoreSubsystem|SessionData" )
@@ -109,28 +109,28 @@ public:
 #pragma region APICALLSPUBLIC
 	/**
 	* Attempts to send the provided Log Buffer to the Capsa Server.
-	* 
+	*
 	* This is performed asynchronously, converted the TArray of BufferedLine's into a single
 	* FString Log. If successful, calls RequestSendLog().
-	* 
+	*
 	* @param LogBuffer The Log buffer to parse and send.
 	*/
 	void									SendLog( TArray<FBufferedLine>& LogBuffer );
-	
+
 	/**
 	* Attempts to Register the provided Log ID as a Linked Log ID.
-	* 
-	* @param FString The LinkedLogID to try and register.
-	* @param FString The Linked log's description, fe. whether it's a server or client
+	*
+	* @param LinkedLogID The LinkedLogID to try and register.
+	* @param Description The Linked log's description, fe. whether it's a server or client
 	* @return bool True if the ID is valid and not already registered. Otherwise false.
 	*/
 	bool									RegisterLinkedLogID( const FString& LinkedLogID, const FString& Description );
 
 	/**
-	* Attempts to Register the provided JsonValue to the given Key which will be sent to the server for metadata storage. 
-	* 
-	* @param FString Metadata key
-	* @param TSharedPtr<FJsonValue> Json value to be stored
+	* Attempts to Register the provided JsonValue to the given Key which will be sent to the server for metadata storage.
+	*
+	* @param Key Metadata key
+	* @param Description Json value to be stored
 	*/
 	void									RegisterAdditionalMetadata( const FString& Key, const TSharedPtr<FJsonValue>& Description );
 #pragma endregion APICALLSPUBLIC
@@ -148,18 +148,18 @@ public:
 	*/
 	static void								OpenServerLogInBrowser();
 #pragma endregion BROWSERMETHODS
-	
+
 protected:
 
 #pragma region APICALLSPROTECTED
 	/**
 	 * Use the Token to generate the Authentication header value
-	 * 
+	 *
 	 * @return FString header value for Authentication header
 	 */
 	FString 								GetAuthHeader() const
 	{
-		return TEXT( "Bearer " ) + Token ;
+		return TEXT( "Bearer " ) + Token;
 	};
 
 	/**
@@ -167,34 +167,34 @@ protected:
 	* Internally constructs the URL from the Config settings and uses the metadata stored on memory
 	*/
 	void									RequestSendMetadata();
-	
+
 	/**
 	* Requests to Send a raw Log to the Capsa Server.
 	* Internally constructs the URL from the Config settings and uses the Auth token acquired from
 	* RequestClientAuth().
-	* 
+	*
 	* @param Log The FString log to attempt to send.
 	*/
 	void									RequestSendLog( const FString& Log );
 #pragma endregion APICALLSPROTECTED
-	
+
 #pragma region APIRESPONSES
 	/**
 	* Generic HTTP response processing function.
 	* If there is any JSON to gather, will get it out of the Response and return it.
-	* 
+	*
 	* @param RequestName The request name (such as calling function name) to prepend to Log Outputs.
 	* @param Request The FHttpRequestPtr that made the Request.
 	* @param Response The FHttpResponsePtr with response information. Payload if successful, error info if not.
 	* @param bSuccess Whether the HTTP response was successful (true) or not (false).
-	* 
+	*
 	* @return TSharedPtr<FJsonObject> The JSON Object if any found. Can be null.
 	*/
 	virtual TSharedPtr<FJsonObject>			ProcessResponse( const FString& RequestName, FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
-	
+
 	/**
 	* Callback after a ClientAuth request. Will only update authentication data in case the instance isn't authenticated yet.
-	* 
+	*
 	* @param Request The FHttpRequestPtr that made the Request.
 	* @param Response The FHttpResponsePtr with response information. Payload if successful, error info if not.
 	* @param bSuccess Whether the HTTP response was successful (true) or not (false).
@@ -218,7 +218,7 @@ protected:
 	* @param bSuccess Whether the HTTP response was successful (true) or not (false).
 	*/
 	virtual void							LogResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
-	
+
 	/**
 	* Callback after a SendMetadata request.
 	* Empties the in-memory metadata in case of a success response.
@@ -229,7 +229,7 @@ protected:
 	*/
 	virtual void							MetadataResponse( FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess );
 #pragma endregion APIRESPONSES
-	
+
 #pragma region UNREAL
 	/**
 	* Called after the Map has loaded with the specified World.
@@ -243,7 +243,7 @@ protected:
 	/**
 	* Called after a Player has been successfully Logged in.
 	* Only bound in OnPostWorldInit and only if bAutoAddCapsaComponent is true.
-	* 
+	*
 	* @param GameMode The GameMode the player joined.
 	* @param Player The PlayerController for the player that has just joined.
 	*/
@@ -258,7 +258,7 @@ protected:
 	*/
 	virtual void							OnPlayerLoggedOut( AGameModeBase* GameMode, AController* Controller );
 #pragma endregion UNREAL
-	
+
 private:
 
 	static void								OpenBrowser( const FString& URL );

@@ -34,12 +34,17 @@ void FCapsaOutputDevice::Serialize( const TCHAR* InData, ELogVerbosity::Type Ver
 	}
 
 	FScopeLock ScopeLock( &SynchronizationObject );
-	BufferedLines.Emplace( InData, Category, Verbosity, FDateTime::Now().ToUnixTimestampDecimal() );
+	BufferedLines.Emplace( InData, Category, Verbosity, FDateTime::UtcNow().ToUnixTimestampDecimal() );
 }
 
 void FCapsaOutputDevice::Initialize()
 {
 	UCapsaSettings* CapsaSettings = GetMutableDefault<UCapsaSettings>();
+	if( CapsaSettings == nullptr )
+	{
+		return;
+	}
+
 	TickRate = CapsaSettings->GetLogTickRate();
 	UpdateRate = CapsaSettings->GetMaxTimeBetweenLogFlushes();
 	MaxLogLines = CapsaSettings->GetMaxLogLinesBetweenLogFlushes();
@@ -80,15 +85,15 @@ bool FCapsaOutputDevice::Tick( float Seconds )
 	}
 
 	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
-	if( CapsaCoreSubsystem != nullptr &&
-		CapsaCoreSubsystem->IsValidLowLevelFast() == true)
+	if( CapsaCoreSubsystem != nullptr && CapsaCoreSubsystem->IsValidLowLevelFast() == true )
 	{
 		if( CapsaCoreSubsystem->IsAuthenticated() == true )
 		{
 			TArray<FBufferedLine> BufferToSend;
 			GetContents( BufferToSend );
 			CapsaCoreSubsystem->SendLog( BufferToSend );
-		} else // Trigger authentication attempt
+		}
+		else // Trigger authentication attempt
 		{
 			CapsaCoreSubsystem->RequestClientAuth();
 		}
