@@ -34,6 +34,12 @@ protected:
 	bool						Tick( float Seconds );
 
 	/**
+	* Callback fired when the application is about to be shutdown.
+	* Bound to FCoreDelegates::OnEnginePreExit.
+	*/
+	void						OnPreExit();
+
+	/**
 	* How fast, in seconds, to update this Output Device.
 	*/
 	float						TickRate;

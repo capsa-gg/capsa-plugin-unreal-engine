@@ -55,6 +55,7 @@ void FCapsaOutputDevice::Initialize()
 	{
 		TickerHandle = FTSTicker::GetCoreTicker().AddTicker( FTickerDelegate::CreateRaw( this, &FCapsaOutputDevice::Tick ), TickRate );
 		GLog->AddOutputDevice( this );
+		FCoreDelegates::OnEnginePreExit.AddRaw( this, &FCapsaOutputDevice::OnPreExit );
 	}
 }
 
@@ -104,4 +105,18 @@ bool FCapsaOutputDevice::Tick( float Seconds )
 	BufferedLines.Empty();
 
 	return true;
+}
+
+void FCapsaOutputDevice::OnPreExit()
+{
+	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
+	if( CapsaCoreSubsystem != nullptr && CapsaCoreSubsystem->IsValidLowLevelFast() == true )
+	{
+		if( CapsaCoreSubsystem->IsAuthenticated() == true )
+		{
+			TArray<FBufferedLine> BufferToSend;
+			GetContents( BufferToSend );
+			CapsaCoreSubsystem->SendLog( BufferToSend );
+		}
+	}
 }
