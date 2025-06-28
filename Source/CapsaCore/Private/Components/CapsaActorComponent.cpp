@@ -170,8 +170,8 @@ bool UCapsaActorComponent::GetIsServer() const
 {
 #if !WITH_SERVER_CODE
 	return false;
-#endif
-	
+#else
 	return GetNetMode() == NM_DedicatedServer || GetNetMode() == NM_ListenServer;
+#endif
 };
 
