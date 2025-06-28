@@ -13,7 +13,7 @@ UCapsaSettings::UCapsaSettings() :
 	CapsaEnvironmentKey(""),
 	LogTickRate(1.f),
 #if UE_EDITOR // On editor builds, default to once per 10 minutes
-	MaxTimeBetweenLogFlushes( 600.f )
+	MaxTimeBetweenLogFlushes(600.f),
 #else // On non-editor builds, default to 5 minutes
 	MaxTimeBetweenLogFlushes(300.f),
 #endif

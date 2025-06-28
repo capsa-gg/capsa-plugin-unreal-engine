@@ -99,7 +99,7 @@ void UCapsaActorComponent::BeginPlay()
 
 	UE_LOG(LogCapsaCore, VeryVerbose, TEXT("UCapsaActorComponent::BeginPlay | CapsaData: %s"), *CapsaData.ToString())
 
-	if (CapsaData.IsEmpty() == true)
+	if (CapsaData.IsEmpty())
 	{
 		UE_LOG(LogCapsaCore, Warning, TEXT("UCapsaActorComponent::BeginPlay | CapsaData.IsEmpty() == true, not sending data"));
 		return;
@@ -108,7 +108,7 @@ void UCapsaActorComponent::BeginPlay()
 	// We have authentication, manually call replication logic
 	OnAuthenticationDelegate(CapsaLogId, CapsaLogURL);
 
-	if (bIsServer == true)
+	if (bIsServer)
 	{
 		// When the server receives authentication data, manually broadcast.
 		// Without this, PIE does not correctly display the server UUID.

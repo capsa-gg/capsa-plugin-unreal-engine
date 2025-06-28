@@ -152,9 +152,9 @@ public:
 	void DoWork()
 	{
 		FString Log = MakeLogString();
-		if (bWriteToDiskPlain == true)
+		if (bWriteToDiskPlain)
 		{
-			if (SaveStringToFile(Log, LogID) == false)
+			if (!SaveStringToFile(Log, LogID))
 			{
 				UE_LOG(LogCapsaCore, Warning, TEXT( "Failed to write plain text file to disk" ))
 			}
@@ -193,7 +193,7 @@ public:
 		TArray<uint8> CompressedLog;
 
 		// Compress data
-		if (MakeCompressedLogBinary(Log, CompressedLog) == false)
+		if (!MakeCompressedLogBinary(Log, CompressedLog))
 		{
 			UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to compress log binary" ))
 		}
@@ -203,9 +203,9 @@ public:
 				*CompressedLog.GetData())
 
 			// Save compressed file to disk
-			if (bWriteToDiskCompressed == true)
+			if (bWriteToDiskCompressed)
 			{
-				if (SaveBinaryToFile(CompressedLog, LogID) == false)
+				if (!SaveBinaryToFile(CompressedLog, LogID))
 				{
 					UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to write compressed file to disk" ))
 				}
@@ -213,9 +213,9 @@ public:
 		}
 
 		// Save plain text to disk
-		if (bWriteToDiskPlain == true)
+		if (bWriteToDiskPlain)
 		{
-			if (SaveStringToFile(Log, LogID) == false)
+			if (!SaveStringToFile(Log, LogID))
 			{
 				UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to write plain text file to disk" ))
 			}

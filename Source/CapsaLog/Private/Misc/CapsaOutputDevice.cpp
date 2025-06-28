@@ -18,7 +18,7 @@ FCapsaOutputDevice::FCapsaOutputDevice() :
 
 FCapsaOutputDevice::~FCapsaOutputDevice()
 {
-	if (TickerHandle.IsValid() == true)
+	if (TickerHandle.IsValid())
 	{
 		GLog->RemoveOutputDevice(this);
 		FTSTicker::GetCoreTicker().RemoveTicker(TickerHandle);
@@ -60,7 +60,7 @@ void FCapsaOutputDevice::Initialize()
 
 bool FCapsaOutputDevice::Tick(float Seconds)
 {
-	if (BufferedLines.IsEmpty() == true)
+	if (BufferedLines.IsEmpty())
 	{
 		return true;
 	}
@@ -79,15 +79,15 @@ bool FCapsaOutputDevice::Tick(float Seconds)
 		bExceedLines = true;
 	}
 
-	if (bExceedTime == false && bExceedLines == false)
+	if (!bExceedTime && !bExceedLines)
 	{
 		return true;
 	}
 
 	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
-	if (CapsaCoreSubsystem != nullptr && CapsaCoreSubsystem->IsValidLowLevelFast() == true)
+	if (CapsaCoreSubsystem != nullptr && CapsaCoreSubsystem->IsValidLowLevelFast())
 	{
-		if (CapsaCoreSubsystem->IsAuthenticated() == true)
+		if (CapsaCoreSubsystem->IsAuthenticated())
 		{
 			TArray<FBufferedLine> BufferToSend;
 			GetContents(BufferToSend);
@@ -109,9 +109,9 @@ bool FCapsaOutputDevice::Tick(float Seconds)
 void FCapsaOutputDevice::OnPreExit()
 {
 	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
-	if (CapsaCoreSubsystem != nullptr && CapsaCoreSubsystem->IsValidLowLevelFast() == true)
+	if (CapsaCoreSubsystem != nullptr && CapsaCoreSubsystem->IsValidLowLevelFast())
 	{
-		if (CapsaCoreSubsystem->IsAuthenticated() == true)
+		if (CapsaCoreSubsystem->IsAuthenticated())
 		{
 			TArray<FBufferedLine> BufferToSend;
 			GetContents(BufferToSend);
