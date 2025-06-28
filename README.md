@@ -77,9 +77,10 @@ bOverrideBuildEnvironment = true;
 
 ## Development guidelines
 
-- Primarily use Unreal Code rules, guidelines, formatting etc.
-- Headers have tab alignment.
+- C++17, this is the minimum version for Unreal Engine 5.2
+- Unreal Code rules, guidelines, formatting etc.
 - All properties, functions, classes etc. should have comments, including @param and @return, where appropriate.
+- Refer to the `.clang-format` and `.editorconfig` files, if possible have your IDE use these to auto-format
 
 ### Release steps
 

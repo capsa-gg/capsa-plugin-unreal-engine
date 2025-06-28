@@ -1,0 +1,19 @@
+# NOTE: Only edit this file in `<P4ROOT>/Services/.editorconfig`, as other instances are copied by CMake
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = tab
+indent_size = 4
+tab_width = 4
+max_line_length = 160
+
+[*.md]
+end_of_line = lf
+indent_style = space
+indent_size = 2
+tab_width = 2
