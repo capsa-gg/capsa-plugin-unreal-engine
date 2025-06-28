@@ -21,23 +21,19 @@ UCLASS()
 class CAPSALOG_API UCapsaLogSubsystem : public UEngineSubsystem
 {
 	GENERATED_BODY()
-	
-public:
 
+public:
 	// Begin USubsystem
-	virtual void						Initialize( FSubsystemCollectionBase& Collection ) override;
-	virtual void						Deinitialize() override;
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
 	// End USubsystem
 
 protected:
-
 	/**
 	* The collector for Logs that registers itself with Log/Output Redirector
 	* and handles compressing/uploading logs to the remote service.
 	*/
-	TPimplPtr<FCapsaOutputDevice>		CapsaLogOutputDevice;
-	
+	TPimplPtr<FCapsaOutputDevice> CapsaLogOutputDevice;
+
 private:
-
-
 };

@@ -4,13 +4,12 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(CapsaCoreFunctionLibrary)
 
-
 FString UCapsaCoreFunctionLibrary::GetPlatformString()
 {
-	FString Platform = TEXT( "Unknown" );
+	FString Platform = TEXT("Unknown");
 
 #if PLATFORM_WINDOWS
-	Platform = TEXT( "Win64" );
+	Platform = TEXT("Win64");
 #elif PLATFORM_LINUX
 	Platform = TEXT( "Linux" );
 #elif PLATFORM_MAC
@@ -34,12 +33,12 @@ FString UCapsaCoreFunctionLibrary::GetPlatformString()
 
 FString UCapsaCoreFunctionLibrary::GetHostTypeString()
 {
-	FString HostType = TEXT( "Unknown" );
+	FString HostType = TEXT("Unknown");
 
 #if UE_EDITOR
 	HostType = TEXT( "Editor" );
 #elif UE_SERVER
-	HostType = TEXT( "Server" );
+	HostType = TEXT("Server");
 #elif WITH_SERVER_CODE
 	HostType = TEXT( "Game" );
 #else
@@ -49,25 +48,25 @@ FString UCapsaCoreFunctionLibrary::GetHostTypeString()
 	return HostType;
 }
 
-FString UCapsaCoreFunctionLibrary::GetLogVerbosityString( ELogVerbosity::Type Verbosity )
+FString UCapsaCoreFunctionLibrary::GetLogVerbosityString(ELogVerbosity::Type Verbosity)
 {
-	switch( Verbosity )
+	switch (Verbosity)
 	{
 	case ELogVerbosity::Fatal:
-		return TEXT( "Fatal" );
+		return TEXT("Fatal");
 	case ELogVerbosity::Error:
-		return TEXT( "Error" );
+		return TEXT("Error");
 	case ELogVerbosity::Warning:
-		return TEXT( "Warning" );
+		return TEXT("Warning");
 	case ELogVerbosity::Display:
-		return TEXT( "Display" );
+		return TEXT("Display");
 	case ELogVerbosity::Log:
-		return TEXT( "Log" );
+		return TEXT("Log");
 	case ELogVerbosity::Verbose:
-		return TEXT( "Verbose" );
+		return TEXT("Verbose");
 	case ELogVerbosity::VeryVerbose:
-		return TEXT( "VeryVerbose" );
+		return TEXT("VeryVerbose");
+	default:
+		return TEXT("Unknown");
 	}
-	
-	return TEXT( "Unknown" );
 }

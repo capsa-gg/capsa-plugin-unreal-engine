@@ -5,57 +5,52 @@
 #include "Engine.h"
 #include "Misc/BufferedOutputDevice.h"
 
-
-
 struct FCapsaOutputDevice : public FBufferedOutputDevice
 {
 public:
-
 	FCapsaOutputDevice();
 	~FCapsaOutputDevice();
 
 	// FBufferedOutputDevice
-	virtual void				Serialize( const TCHAR* InData, ELogVerbosity::Type Verbosity, const FName& Category ) override;
+	virtual void Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const FName& Category) override;
 	// ~FBufferedOutputDevice
 
 protected:
-
 	/**
 	* Perform any specific Initialization.
 	*/
-	virtual void				Initialize();
+	virtual void Initialize();
 
 	/**
 	* Is called every time period, set by TickRate.
-	* 
+	*
 	* @param Seconds The number of seconds since the last tick.
 	* @return bool True if Tick was handled correctly, otherwise false.
 	*/
-	bool						Tick( float Seconds );
+	bool Tick(float Seconds);
 
 	/**
 	* Callback fired when the application is about to be shutdown.
 	* Bound to FCoreDelegates::OnEnginePreExit.
 	*/
-	void						OnPreExit();
+	void OnPreExit();
 
 	/**
 	* How fast, in seconds, to update this Output Device.
 	*/
-	float						TickRate;
+	float TickRate;
 
 	/**
 	* How often this Output Device should attempt to send updates.
 	*/
-	float						UpdateRate;
+	float UpdateRate;
 
 	/**
 	* How many log lines should be buffered, before we attempt to send updates.
 	*/
-	int32						MaxLogLines;
+	int32 MaxLogLines;
 
 private:
-
-	FTSTicker::FDelegateHandle	TickerHandle;
-	double						LastUpdateTime;
+	FTSTicker::FDelegateHandle TickerHandle;
+	double LastUpdateTime;
 };

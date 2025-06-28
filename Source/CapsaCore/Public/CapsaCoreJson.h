@@ -6,11 +6,10 @@
 
 class UCapsaCoreJsonHelpers
 {
-	public:
+public:
+	static TSharedPtr<FJsonObject> TMapToJsonObject(const TMap<FString, FString>& Map);
 
-	static TSharedPtr<FJsonObject>	TMapToJsonObject( const TMap<FString, FString>& Map );
-
-	static TSharedPtr<FJsonObject>	TMapToJsonObject( const TMap<FString, TSharedPtr<FJsonValue>>& Map );
+	static TSharedPtr<FJsonObject> TMapToJsonObject(const TMap<FString, TSharedPtr<FJsonValue>>& Map);
 };
 
 USTRUCT()
@@ -19,24 +18,28 @@ struct FCapsaAuthenticationRequest
 	GENERATED_BODY()
 
 public:
+	FCapsaAuthenticationRequest() :
+		Key(TEXT("")),
+		Platform(TEXT("")),
+		Type(TEXT(""))
+	{
+	};
 
-	FCapsaAuthenticationRequest()
-		: Key(TEXT(""))
-		, Platform(TEXT(""))
-		, Type(TEXT("")) {};
-	FCapsaAuthenticationRequest( const FString& InKey, const FString& InPlatform, const FString& InType )
-		: Key( InKey )
-		, Platform( InPlatform )
-		, Type( InType ){};
+	FCapsaAuthenticationRequest(const FString& InKey, const FString& InPlatform, const FString& InType) :
+		Key(InKey),
+		Platform(InPlatform),
+		Type(InType)
+	{
+	};
 
 	UPROPERTY()
-	FString							Key;
-	
+	FString Key;
+
 	UPROPERTY()
-	FString							Platform;
-	
+	FString Platform;
+
 	UPROPERTY()
-	FString							Type;
+	FString Type;
 };
 
 USTRUCT()
@@ -44,23 +47,24 @@ struct FCapsaAuthenticationResponse
 {
 	GENERATED_BODY()
 
-	FCapsaAuthenticationResponse()
-		: Token(TEXT(""))
-		, LogId(TEXT(""))
-		, LinkWeb(TEXT(""))
-		, Expiry(TEXT("")) {};
+	FCapsaAuthenticationResponse() :
+		Token(TEXT("")),
+		LogId(TEXT("")),
+		LinkWeb(TEXT("")),
+		Expiry(TEXT(""))
+	{
+	};
 
 public:
+	UPROPERTY()
+	FString Token;
 
 	UPROPERTY()
-	FString							Token;
-	
+	FString LogId;
+
 	UPROPERTY()
-	FString							LogId;
-	
+	FString LinkWeb;
+
 	UPROPERTY()
-	FString							LinkWeb;
-	
-	UPROPERTY()
-	FString							Expiry;
+	FString Expiry;
 };

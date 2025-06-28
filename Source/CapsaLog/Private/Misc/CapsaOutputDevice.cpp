@@ -5,12 +5,11 @@
 #include "Settings/CapsaSettings.h"
 #include "CapsaCoreSubsystem.h"
 
-
-FCapsaOutputDevice::FCapsaOutputDevice()
-	: TickRate( 1.f )
-	, UpdateRate( 0.f )
-	, MaxLogLines( 100 )
-	, LastUpdateTime( 0 )
+FCapsaOutputDevice::FCapsaOutputDevice() :
+	TickRate(1.f),
+	UpdateRate(0.f),
+	MaxLogLines(100),
+	LastUpdateTime(0)
 {
 	// TODO: Make this a config option
 	FilterLevel = ELogVerbosity::All;
@@ -19,28 +18,28 @@ FCapsaOutputDevice::FCapsaOutputDevice()
 
 FCapsaOutputDevice::~FCapsaOutputDevice()
 {
-	if( TickerHandle.IsValid() == true )
+	if (TickerHandle.IsValid() == true)
 	{
-		GLog->RemoveOutputDevice( this );
-		FTSTicker::GetCoreTicker().RemoveTicker( TickerHandle );
+		GLog->RemoveOutputDevice(this);
+		FTSTicker::GetCoreTicker().RemoveTicker(TickerHandle);
 	}
 }
 
-void FCapsaOutputDevice::Serialize( const TCHAR* InData, ELogVerbosity::Type Verbosity, const FName& Category )
+void FCapsaOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const FName& Category)
 {
-	if( Verbosity > FilterLevel )
+	if (Verbosity > FilterLevel)
 	{
 		return;
 	}
 
-	FScopeLock ScopeLock( &SynchronizationObject );
-	BufferedLines.Emplace( InData, Category, Verbosity, FDateTime::UtcNow().ToUnixTimestampDecimal() );
+	FScopeLock ScopeLock(&SynchronizationObject);
+	BufferedLines.Emplace(InData, Category, Verbosity, FDateTime::UtcNow().ToUnixTimestampDecimal());
 }
 
 void FCapsaOutputDevice::Initialize()
 {
 	UCapsaSettings* CapsaSettings = GetMutableDefault<UCapsaSettings>();
-	if( CapsaSettings == nullptr )
+	if (CapsaSettings == nullptr)
 	{
 		return;
 	}
@@ -51,17 +50,17 @@ void FCapsaOutputDevice::Initialize()
 
 	LastUpdateTime = FPlatformTime::Seconds();
 
-	if( TickRate > 0.0f )
+	if (TickRate > 0.0f)
 	{
-		TickerHandle = FTSTicker::GetCoreTicker().AddTicker( FTickerDelegate::CreateRaw( this, &FCapsaOutputDevice::Tick ), TickRate );
-		GLog->AddOutputDevice( this );
-		FCoreDelegates::OnEnginePreExit.AddRaw( this, &FCapsaOutputDevice::OnPreExit );
+		TickerHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateRaw(this, &FCapsaOutputDevice::Tick), TickRate);
+		GLog->AddOutputDevice(this);
+		FCoreDelegates::OnEnginePreExit.AddRaw(this, &FCapsaOutputDevice::OnPreExit);
 	}
 }
 
-bool FCapsaOutputDevice::Tick( float Seconds )
+bool FCapsaOutputDevice::Tick(float Seconds)
 {
-	if( BufferedLines.IsEmpty() == true )
+	if (BufferedLines.IsEmpty() == true)
 	{
 		return true;
 	}
@@ -70,29 +69,29 @@ bool FCapsaOutputDevice::Tick( float Seconds )
 	bool bExceedTime = false;
 	bool bExceedLines = false;
 
-	if( LastUpdateTime + UpdateRate < Now )
+	if (LastUpdateTime + UpdateRate < Now)
 	{
 		bExceedTime = true;
 	}
 
-	if( BufferedLines.Num() >= MaxLogLines )
+	if (BufferedLines.Num() >= MaxLogLines)
 	{
 		bExceedLines = true;
 	}
 
-	if( bExceedTime == false && bExceedLines == false )
+	if (bExceedTime == false && bExceedLines == false)
 	{
 		return true;
 	}
 
 	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
-	if( CapsaCoreSubsystem != nullptr && CapsaCoreSubsystem->IsValidLowLevelFast() == true )
+	if (CapsaCoreSubsystem != nullptr && CapsaCoreSubsystem->IsValidLowLevelFast() == true)
 	{
-		if( CapsaCoreSubsystem->IsAuthenticated() == true )
+		if (CapsaCoreSubsystem->IsAuthenticated() == true)
 		{
 			TArray<FBufferedLine> BufferToSend;
-			GetContents( BufferToSend );
-			CapsaCoreSubsystem->SendLog( BufferToSend );
+			GetContents(BufferToSend);
+			CapsaCoreSubsystem->SendLog(BufferToSend);
 		}
 		else // Trigger authentication attempt
 		{
@@ -101,7 +100,7 @@ bool FCapsaOutputDevice::Tick( float Seconds )
 	}
 
 	LastUpdateTime = Now;
-	FScopeLock ScopeLock( &SynchronizationObject );
+	FScopeLock ScopeLock(&SynchronizationObject);
 	BufferedLines.Empty();
 
 	return true;
@@ -110,13 +109,13 @@ bool FCapsaOutputDevice::Tick( float Seconds )
 void FCapsaOutputDevice::OnPreExit()
 {
 	UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
-	if( CapsaCoreSubsystem != nullptr && CapsaCoreSubsystem->IsValidLowLevelFast() == true )
+	if (CapsaCoreSubsystem != nullptr && CapsaCoreSubsystem->IsValidLowLevelFast() == true)
 	{
-		if( CapsaCoreSubsystem->IsAuthenticated() == true )
+		if (CapsaCoreSubsystem->IsAuthenticated() == true)
 		{
 			TArray<FBufferedLine> BufferToSend;
-			GetContents( BufferToSend );
-			CapsaCoreSubsystem->SendLog( BufferToSend );
+			GetContents(BufferToSend);
+			CapsaCoreSubsystem->SendLog(BufferToSend);
 		}
 	}
 }

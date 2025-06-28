@@ -4,26 +4,26 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(CapsaCoreJson)
 
-TSharedPtr<FJsonObject> UCapsaCoreJsonHelpers::TMapToJsonObject( const TMap<FString, FString>& Map )
+TSharedPtr<FJsonObject> UCapsaCoreJsonHelpers::TMapToJsonObject(const TMap<FString, FString>& Map)
 {
-	TSharedPtr<FJsonObject> JsonObject = MakeShareable( new FJsonObject );
+	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
 
-	for( TPair<FString, FString> Item : Map)
+	for (TPair<FString, FString> Item : Map)
 	{
-		JsonObject->SetStringField( Item.Key, Item.Value );
+		JsonObject->SetStringField(Item.Key, Item.Value);
 	}
 
 	return JsonObject;
 }
 
-TSharedPtr<FJsonObject> UCapsaCoreJsonHelpers::TMapToJsonObject( const TMap<FString, TSharedPtr<FJsonValue>>& Map )
+TSharedPtr<FJsonObject> UCapsaCoreJsonHelpers::TMapToJsonObject(const TMap<FString, TSharedPtr<FJsonValue>>& Map)
 {
-	TSharedPtr<FJsonObject> JsonObject = MakeShareable( new FJsonObject );
+	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
 
-	for( const TPair<FString, TSharedPtr<FJsonValue>>& Item : Map)
+	for (const TPair<FString, TSharedPtr<FJsonValue>>& Item : Map)
 	{
-		JsonObject->SetField( Item.Key, Item.Value );
+		JsonObject->SetField(Item.Key, Item.Value);
 	}
-	
+
 	return JsonObject;
 }

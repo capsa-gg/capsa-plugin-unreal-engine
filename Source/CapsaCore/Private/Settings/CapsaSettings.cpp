@@ -6,24 +6,23 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(CapsaSettings)
 
-
 // NOTE: If the defaults change, this should be updated on the documentation website.
-UCapsaSettings::UCapsaSettings()
-	: Protocol( "https" )
-	, CapsaServerURL( "" )
-	, CapsaEnvironmentKey( "" )
-	, LogTickRate( 1.f )
+UCapsaSettings::UCapsaSettings() :
+	Protocol("https"),
+	CapsaServerURL(""),
+	CapsaEnvironmentKey(""),
+	LogTickRate(1.f),
 #if UE_EDITOR // On editor builds, default to once per 10 minutes
-	, MaxTimeBetweenLogFlushes( 600.f )
+	MaxTimeBetweenLogFlushes( 600.f )
 #else // On non-editor builds, default to 5 minutes
-	, MaxTimeBetweenLogFlushes( 300.f )
+	MaxTimeBetweenLogFlushes(300.f),
 #endif
-	, MaxLogLinesBetweenLogFlushes( 1000 )
-	, bUseCompression( true )
-	, bWriteToDiskPlain( true )
-	, bWriteToDiskCompressed( false )
-	, bAutoAddCapsaComponent( true )
-	, AutoAddClass( APlayerState::StaticClass() )
+	MaxLogLinesBetweenLogFlushes(1000),
+	bUseCompression(true),
+	bWriteToDiskPlain(true),
+	bWriteToDiskCompressed(false),
+	bAutoAddCapsaComponent(true),
+	AutoAddClass(APlayerState::StaticClass())
 {
 }
 
@@ -45,27 +44,26 @@ FString UCapsaSettings::GetCapsaEnvironmentKey() const
 FString UCapsaSettings::GetServerEndpointClientAuth() const
 {
 	FString Url = GenerateServerBaseURL();
-	Url.Append( ServerEndpointClientAuth );
-	
+	Url.Append(ServerEndpointClientAuth);
+
 	return Url;
 }
 
 FString UCapsaSettings::GetServerEndpointClientLogChunk() const
 {
 	FString Url = GenerateServerBaseURL();
-	Url.Append( ServerEndpointClientLogChunk );
-	
+	Url.Append(ServerEndpointClientLogChunk);
+
 	return Url;
 }
 
 FString UCapsaSettings::GetServerEndpointClientLogMetadata() const
 {
 	FString Url = GenerateServerBaseURL();
-	Url.Append( ServerEndpointClientLogMetadata );
-	
+	Url.Append(ServerEndpointClientLogMetadata);
+
 	return Url;
 }
-
 
 float UCapsaSettings::GetLogTickRate() const
 {
@@ -109,12 +107,12 @@ TSubclassOf<AActor> UCapsaSettings::GetAutoAddClass() const
 
 FString UCapsaSettings::GenerateServerBaseURL() const
 {
-	// Equivalent to FString::Printf(TEXT( "%s://%s/" )	
-	FString ServerBaseUrl = TEXT( "" );
-	ServerBaseUrl.Append( GetProtocol() );
-	ServerBaseUrl.Append( TEXT( "://" ) );
-	ServerBaseUrl.Append( GetCapsaServerURL() );
-	ServerBaseUrl.Append( TEXT( "/" ) );
-	
+	// Equivalent to FString::Printf(TEXT( "%s://%s/" )
+	FString ServerBaseUrl = TEXT("");
+	ServerBaseUrl.Append(GetProtocol());
+	ServerBaseUrl.Append(TEXT("://"));
+	ServerBaseUrl.Append(GetCapsaServerURL());
+	ServerBaseUrl.Append(TEXT("/"));
+
 	return ServerBaseUrl;
 }
