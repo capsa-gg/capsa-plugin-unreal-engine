@@ -35,13 +35,7 @@ Documentation about all configuration options can be found [here](https://capsa.
 
 In case your setup requires overwrites of certain configuration values for different build types, there are two options.
 
-You can add configuration files that override the base config, as explained [here](https://dev.epicgames.com/documentation/en-us/unreal-engine/configuration-files-in-unreal-engine#configurationfilehierarchy) in the UE docs.
-
-Alternatively, you can use UAT ini-overrides. Overrides take the form of `-ini:Engine:[SettingsKey]:Variable=Value`. So for example to overwrite the `CapsaEnvironmentKey`:
-
-```ps1
-.\Path\To\RunUAT.bat BuildCookRun <BuildArgs> -ini:Engine:[/Script/CapsaCore.CapsaSettings]:CapsaEnvironmentKey=<YourEnvironmentKey>
-```
+These options are discussed in the [Unteal Engine plugin setup](https://capsa.gg/docs/getting-started/unreal-engine-plugin#overriding-environment-variables) page of the Capsa documentation.
 
 ## Enabling Verbose and VeryVerbose logging
 
