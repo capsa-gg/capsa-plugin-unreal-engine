@@ -10,7 +10,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogCapsaCore, Log, All);
 class FCapsaCoreModule : public IModuleInterface
 {
 public:
-	/** IModuleInterface implementation */
+	// Start IModuleInterface
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+	// End IModuleInterface
 };

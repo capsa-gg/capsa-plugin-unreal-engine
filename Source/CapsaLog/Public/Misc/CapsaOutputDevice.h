@@ -5,6 +5,7 @@
 #include "Engine.h"
 #include "Misc/BufferedOutputDevice.h"
 
+/// Output device that Capsa uses to collect logs
 struct FCapsaOutputDevice : public FBufferedOutputDevice
 {
 public:
@@ -16,38 +17,24 @@ public:
 	// ~FBufferedOutputDevice
 
 protected:
-	/**
-	* Perform any specific Initialization.
-	*/
+	/// Perform any specific Initialization.
 	virtual void Initialize();
 
-	/**
-	* Is called every time period, set by TickRate.
-	*
-	* @param Seconds The number of seconds since the last tick.
-	* @return bool True if Tick was handled correctly, otherwise false.
-	*/
+	/// Is called every time period, set by TickRate.
+	/// @param Seconds The number of seconds since the last tick.
+	/// @return bool True if Tick was handled correctly, otherwise false.
 	bool Tick(float Seconds);
 
-	/**
-	* Callback fired when the application is about to be shutdown.
-	* Bound to FCoreDelegates::OnEnginePreExit.
-	*/
+	/// Callback fired when the application is about to be shutdown. Bound to FCoreDelegates::OnEnginePreExit.
 	void OnPreExit();
 
-	/**
-	* How fast, in seconds, to update this Output Device.
-	*/
+	/// How fast, in seconds, to update this Output Device.
 	float TickRate;
 
-	/**
-	* How often this Output Device should attempt to send updates.
-	*/
+	/// How often this Output Device should attempt to send updates.
 	float UpdateRate;
 
-	/**
-	* How many log lines should be buffered, before we attempt to send updates.
-	*/
+	/// How many log lines should be buffered, before we attempt to send updates.
 	int32 MaxLogLines;
 
 private:

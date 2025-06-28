@@ -21,7 +21,8 @@ FString GetDefaultDescription(bool bIsServer)
 }
 
 UCapsaActorComponent::UCapsaActorComponent() :
-	CapsaServerData(FCapsaSharedData{}), CapsaData(FCapsaSharedData{})
+	CapsaServerData(FCapsaSharedData{}),
+	CapsaData(FCapsaSharedData{})
 {
 	SetIsReplicatedByDefault(true);
 	SetAutoActivate(true);

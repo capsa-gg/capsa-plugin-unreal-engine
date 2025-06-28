@@ -13,7 +13,7 @@ FCapsaOutputDevice::FCapsaOutputDevice() :
 {
 	// TODO: Make this a config option
 	FilterLevel = ELogVerbosity::All;
-	Initialize();
+	Initialize(); // FIXME: warning: Call to a virtual function inside a constructor is resolved at compile time
 }
 
 FCapsaOutputDevice::~FCapsaOutputDevice()

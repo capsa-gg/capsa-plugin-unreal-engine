@@ -8,11 +8,7 @@
 typedef TFunction<void(const FString&)> FAsyncStringFromBufferCallback;
 typedef TFunction<void(const TArray<uint8>&)> FAsyncBinaryFromBufferCallback;
 
-/**
-* Base Capsa Async Task.
-* Stores the Buffer and Callback function. Also contains base helper methods like
-* those to construct a single Log String from the Buffer.
-*/
+/// Base Capsa Async Task. Stores the Buffer and Callback function. Also contains base helper methods like those to construct a single Log String from the Buffer.
 template<typename CallbackType>
 class FCapsaAsyncTask : public FNonAbandonableTask
 {
@@ -27,12 +23,9 @@ public:
 	{
 	}
 
-	/**
-	* Builds a Log string from the Buffer, with the format:
-	* [Timestamp][LogVerbosity][LogCategory]: LogData\n
-	*
-	* @return FString The generated Log from the Buffer.
-	*/
+	/// Builds a Log string from the Buffer, with the format:
+	/// [Timestamp][LogVerbosity][LogCategory]: LogData\n
+	/// @return FString The generated Log from the Buffer.
 	FString MakeLogString()
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(MakeLogString);
@@ -54,14 +47,10 @@ public:
 		return Log;
 	}
 
-	/**
-	* Uses MakeLogString() to generate the Log.
-	* Then compresses said log using GZip, ZLib or Oodle compression.
-	*
-	* @param UncompressedLog The reference to the Uncompressed Log FString to write to.
-	* @param BinaryData The reference to the Binary Array to write to.
-	* @return bool True if compression was successful.
-	*/
+	/// Uses MakeLogString() to generate the Log. Then compresses said log using GZip, ZLib or Oodle compression.
+	/// @param UncompressedLog The reference to the Uncompressed Log FString to write to.
+	/// @param BinaryData The reference to the Binary Array to write to.
+	/// @return bool True if compression was successful.
 	bool MakeCompressedLogBinary(FString& UncompressedLog, TArray<uint8>& BinaryData)
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(MakeCompressedLogBinary);
@@ -97,15 +86,11 @@ public:
 		return bSuccess;
 	}
 
-	/**
-	* Attempts to save the provided Log String to a file with the provided FileName.
-	* Uses the ProjectLogDir folder to output the file to.
-	*
-	* @param LogToSave The Source FString Log to save to file.
-	* @param FileName The name of the file to save.
-	*
-	* @return bool True if successfully written to file, otherwise false.
-	*/
+	/// Attempts to save the provided Log String to a file with the provided FileName.
+	/// Uses the ProjectLogDir folder to output the file to.
+	/// @param LogToSave The Source FString Log to save to file.
+	/// @param FileName The name of the file to save.
+	/// @return bool True if successfully written to file, otherwise false.
 	bool SaveStringToFile(const FString& LogToSave, const FString& FileName)
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(SaveStringToFile);
@@ -118,15 +103,10 @@ public:
 			EFileWrite::FILEWRITE_Append);
 	}
 
-	/**
-	* Attempts to save the provided BinaryData to a file with the provided FileName.
-	* Uses the ProjectLogDir folder to output the file to.
-	*
-	* @param BinaryData The Source Binary Array to save to file.
-	* @param FileName The name of the file to save.
-	*
-	* @return bool True if successfully written to file, otherwise false.
-	*/
+	/// Attempts to save the provided BinaryData to a file with the provided FileName. Uses the ProjectLogDir folder to output the file to.
+	/// @param BinaryData The Source Binary Array to save to file.
+	/// @param FileName The name of the file to save.
+	/// @return bool True if successfully written to file, otherwise false.
 	bool SaveBinaryToFile(TArray<uint8> BinaryData, const FString& FileName)
 	{
 		TRACE_CPUPROFILER_EVENT_SCOPE(SaveBinaryToFile);
@@ -156,11 +136,7 @@ protected:
 	const FString CompressedExtension;
 };
 
-/**
-* Async task to create a FString that we can send over HTTP
-* from a FBufferredLine TArray.
-* And then save this Raw String to File.
-*/
+/// Async task to create a FString that we can send over HTTP from a FBufferredLine TArray and then save this Raw String to File.
 class FSaveStringFromBufferTask : public FCapsaAsyncTask<FAsyncStringFromBufferCallback>
 {
 public:
@@ -196,11 +172,7 @@ protected:
 	bool bWriteToDiskPlain;
 };
 
-/**
-* Async task to create a Binary Array that we can send over HTTP
-* from a FBufferredLine TArray.
-* And then save this compressed Binary Array to File.
-*/
+/// Async task to create a Binary Array that we can send over HTTP from a FBufferredLine TArray and then save this compressed Binary Array to File.
 class FSaveCompressedStringFromBufferTask : public FCapsaAsyncTask<FAsyncBinaryFromBufferCallback>
 {
 public:

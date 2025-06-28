@@ -7,9 +7,7 @@
 
 #include "CapsaActorComponent.generated.h"
 
-/**
-* FCapsaSharedData contains Capsa data that is shared between servers and clients.
- */
+/// FCapsaSharedData contains Capsa data that is shared between servers and clients.
 USTRUCT(BlueprintType)
 struct CAPSACORE_API FCapsaSharedData
 {
@@ -27,50 +25,34 @@ public:
 	{
 	};
 
-	/**
-	* Contains the UUID to the log session
-	*/
+	/// Contains the UUID to the log session
 	UPROPERTY(BlueprintReadOnly, Category = "Capsa|Log|ActorComponent|SharedData")
 	FString LogID;
 
-	/**
-	* Contains the direct URL to view a log in the Capsa web application.
-	* This is necessary as in theory, the server's logs can be stored in a separate instance from the client.
-	*/
+	/// Contains the direct URL to view a log in the Capsa web application. This is necessary as in theory, the server's logs can be stored in a separate instance from the client.
 	UPROPERTY(BlueprintReadOnly, Category = "Capsa|Log|ActorComponent|SharedData")
 	FString LogURL;
 
-	/**
-	* Contains a description of the actor, for example indicating Server vs Client.
-	* This can also be used to
-	*/
+	/// Contains a description of the actor, for example indicating Server vs Client.
 	UPROPERTY(BlueprintReadOnly, Category = "Capsa|Log|ActorComponent|SharedData")
 	FString Description;
 
-	/**
-	* Returns the contents of the FCapsaSharedData instance as an FString for printing/logging purposes.
-	*
-	* @return FString string representation of struct data/
-	*/
+	/// Returns the contents of the FCapsaSharedData instance as an FString for printing/logging purposes.
+	/// @return FString string representation of struct data/
 	FString ToString() const
 	{
 		return FString::Printf(TEXT("FCapsaSharedData { LogID: %s, LogURL: %s, Description: %s } "), *LogID, *LogURL, *Description);
 	};
 
-	/**
-	* Returns whether the struct should be considered empty.
-	*
-	* @return bool indicating whether the struct should be considered empty.
-	*/
+	/// Returns whether the struct should be considered empty.
+	/// @return bool indicating whether the struct should be considered empty.
 	bool IsEmpty() const
 	{
 		return LogID.IsEmpty() || LogURL.IsEmpty();
 	}
 };
 
-/**
- * UCapsaActorComponent is an actor component that allows zero-setup replication of Capsa data between client and server.
- */
+/// UCapsaActorComponent is an actor component that allows zero-setup replication of Capsa data between client and server.
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class CAPSACORE_API UCapsaActorComponent : public UActorComponent
 {
@@ -81,22 +63,16 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	/**
-	* Registers the client's Capsa data as a linked log for the server.
-	*/
+	/// Registers the client's Capsa data as a linked log for the server.
 	UFUNCTION(Server, Reliable)
 	void ServerRegisterLinkedCapsaLog(const FCapsaSharedData& ClientCapsaData);
 
-	/**
-	 * Replication function for CapsaServerData, which adds the server log ID to linked logs.
-	 */
+	/// Replication function for CapsaServerData, which adds the server log ID to linked logs.
 	UFUNCTION()
 	void OnRep_CapsaServerData();
 
-	/**
-	 * If running on a server, the field contains the server's own data.
-	 * If running on a client, the field will contain the data for the connected server.
-	 */
+	/// If running on a server, the field contains the server's own data.
+	/// If running on a client, the field will contain the data for the connected server.
 	UPROPERTY(ReplicatedUsing = OnRep_CapsaServerData)
 	FCapsaSharedData CapsaServerData;
 
@@ -110,16 +86,11 @@ protected:
 
 	void OnAuthenticationDelegate(const FString& LogId, const FString& LogURL);
 
-	/**
-	 * On server: FCapsaSharedData for player that last joined
-	 * On client: client's own FCapsaSharedData.
-	 */
+	/// On server: FCapsaSharedData for player that last joined
+	/// On client: client's own FCapsaSharedData.
 	FCapsaSharedData CapsaData;
 
-	/**
-	*  Whether the game instance on which the actor is running should be considered a server or not.
-	*
-	*  @return bool server status.
-    */
+	///  Whether the game instance on which the actor is running should be considered a server or not.
+	///  @return bool server status.
 	bool GetIsServer() const;
 };

@@ -14,9 +14,7 @@
 // Forward Declarations
 struct FCapsaOutputDevice;
 
-/**
- * UCapsaLogSubsystem is responsible for attaching the FCapsaOutputDevice.
- */
+/// UCapsaLogSubsystem is responsible for attaching the FCapsaOutputDevice.
 UCLASS()
 class CAPSALOG_API UCapsaLogSubsystem : public UEngineSubsystem
 {
@@ -29,10 +27,7 @@ public:
 	// End USubsystem
 
 protected:
-	/**
-	* The collector for Logs that registers itself with Log/Output Redirector
-	* and handles compressing/uploading logs to the remote service.
-	*/
+	/// The collector for Logs that registers itself with Log/Output Redirector and handles compressing/uploading logs to the remote service.
 	TPimplPtr<FCapsaOutputDevice> CapsaLogOutputDevice;
 
 private:

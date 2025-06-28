@@ -12,6 +12,7 @@ public:
 	static TSharedPtr<FJsonObject> TMapToJsonObject(const TMap<FString, TSharedPtr<FJsonValue>>& Map);
 };
 
+/// Request to authenticate with the Capsa server
 USTRUCT()
 struct FCapsaAuthenticationRequest
 {
@@ -33,15 +34,16 @@ public:
 	};
 
 	UPROPERTY()
-	FString Key;
+	FString Key; ///< Environment key to identify which Environment/Title the log should be stored under
 
 	UPROPERTY()
-	FString Platform;
+	FString Platform; ///< Indicates the platform the game is running on
 
 	UPROPERTY()
-	FString Type;
+	FString Type; ///< Indicates whether the log is from Editor, Client, Game or Server
 };
 
+/// Returned when successfully authenticating with the Capsa server
 USTRUCT()
 struct FCapsaAuthenticationResponse
 {
@@ -57,14 +59,14 @@ struct FCapsaAuthenticationResponse
 
 public:
 	UPROPERTY()
-	FString Token;
+	FString Token; ///< JWT that should be included when sending log chunks or metadata
 
 	UPROPERTY()
-	FString LogId;
+	FString LogId; ///< UUID that is used to identify the current log
 
 	UPROPERTY()
-	FString LinkWeb;
+	FString LinkWeb; ///< Direct link to view the log in the Capsa web app
 
 	UPROPERTY()
-	FString Expiry;
+	FString Expiry; ///< Timestamp of when the Token will expire, should be longer than any expected game session
 };
