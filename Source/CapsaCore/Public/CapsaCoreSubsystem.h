@@ -77,7 +77,8 @@ public:
 	/// Attempts to send the provided Log Buffer to the Capsa Server.
 	/// This is performed asynchronously, converted the TArray of BufferedLine's into a single FString Log. If successful, calls RequestSendLog().
 	/// @param LogBuffer The Log buffer to parse and send.
-	void SendLog(TArray<FBufferedLine>& LogBuffer);
+	/// @param bBlocking Make sending the log a blocking operation, should only be used during shutdown, default=false
+	void SendLog(TArray<FBufferedLine>& LogBuffer, bool bBlocking = false);
 
 	/// Attempts to Register the provided Log ID as a Linked Log ID.
 	/// @param LinkedLogID The LinkedLogID to try and register.
@@ -114,7 +115,8 @@ protected:
 
 	/// Requests to Send a raw Log to the Capsa Server. Internally constructs the URL from the Config settings and uses the Auth token acquired from RequestClientAuth().
 	/// @param Log The FString log to attempt to send.
-	void RequestSendLog(const FString& Log);
+	/// @param bBlocking make request blocking, should only be used during shutdown, default=false
+	void RequestSendLog(const FString& Log, bool bBlocking = false);
 #pragma endregion APICALLSPROTECTED
 
 #pragma region APIRESPONSES
@@ -134,7 +136,8 @@ protected:
 
 	/// Requests to Send a Compressed Log to the Capsa Server. Internally constructs the URL from the Config settings and uses the Auth token acquired from RequestClientAuth().
 	/// @param CompressedLog The TArray<uint8> binary log to attempt to send.
-	void RequestSendCompressedLog(const TArray<uint8>& CompressedLog);
+	/// @param bBlocking make request blocking, should only be used during shutdown, default=false
+	void RequestSendCompressedLog(const TArray<uint8>& CompressedLog, bool bBlocking = false);
 
 	/// Callback after a SendLog request.
 	/// @param Request The FHttpRequestPtr that made the Request.
