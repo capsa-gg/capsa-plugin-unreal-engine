@@ -195,19 +195,19 @@ public:
 		// Compress data
 		if (!MakeCompressedLogBinary(Log, CompressedLog))
 		{
-			UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to compress log binary" ))
+			UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to compress log binary" ));
 		}
 		else
 		{
-			UE_LOG(LogCapsaCore, VeryVerbose, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Compressed log binary, length: %hhu" ),
-				*CompressedLog.GetData())
+			UE_LOG(LogCapsaCore, VeryVerbose, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Compressed log binary, length: %d" ),
+				CompressedLog.Num());
 
 			// Save compressed file to disk
 			if (bWriteToDiskCompressed)
 			{
 				if (!SaveBinaryToFile(CompressedLog, LogID))
 				{
-					UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to write compressed file to disk" ))
+					UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to write compressed file to disk" ));
 				}
 			}
 		}
@@ -217,7 +217,7 @@ public:
 		{
 			if (!SaveStringToFile(Log, LogID))
 			{
-				UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to write plain text file to disk" ))
+				UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to write plain text file to disk" ));
 			}
 		}
 
