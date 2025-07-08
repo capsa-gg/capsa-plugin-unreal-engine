@@ -27,18 +27,13 @@ FCapsaOutputDevice::~FCapsaOutputDevice()
 
 void FCapsaOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const FName& Category)
 {
-	Serialize(InData, Verbosity, Category, FDateTime::UtcNow().ToUnixTimestampDecimal());
-}
-
-void FCapsaOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const FName& Category, double Time)
-{
 	if (Verbosity > FilterLevel)
 	{
 		return;
 	}
 
 	FScopeLock ScopeLock(&SynchronizationObject);
-	BufferedLines.Emplace(InData, Category, Verbosity, Time);
+	BufferedLines.Emplace(InData, Category, Verbosity, FDateTime::UtcNow().ToUnixTimestampDecimal());
 }
 
 void FCapsaOutputDevice::Initialize()
@@ -57,12 +52,11 @@ void FCapsaOutputDevice::Initialize()
 
 	if (TickRate > 0.0f)
 	{
+		GLog->SerializeBacklog(this);
 		TickerHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateRaw(this, &FCapsaOutputDevice::Tick), TickRate);
 		GLog->AddOutputDevice(this);
 		FCoreDelegates::OnEnginePreExit.AddRaw(this, &FCapsaOutputDevice::OnPreExit);
 	}
-
-	GLog->SerializeBacklog(this);
 }
 
 bool FCapsaOutputDevice::Tick(float Seconds)

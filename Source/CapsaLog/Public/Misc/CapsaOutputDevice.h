@@ -14,7 +14,6 @@ public:
 
 	// FBufferedOutputDevice
 	virtual void Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const FName& Category) override;
-	virtual void Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const FName& Category, double Time) override;
 	// ~FBufferedOutputDevice
 
 protected:
