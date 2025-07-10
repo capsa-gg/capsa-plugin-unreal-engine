@@ -142,7 +142,7 @@ void UCapsaActorComponent::OnAuthenticationDelegate(const FString& LogId, const 
 	if (bIsServer)
 	{
 		CapsaServerData = CapsaData;
-		OnRep_CapsaServerData(); // Replicate to clients
+		OnRep_CapsaServerData(); // OnRep's do not run ON the Server. Manually trigger so processing is in one place.
 
 		UCapsaCoreSubsystem* CapsaCoreSubsystem = GEngine->GetEngineSubsystem<UCapsaCoreSubsystem>();
 		if (CapsaCoreSubsystem == nullptr)

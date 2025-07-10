@@ -45,13 +45,6 @@ public:
 	/// Delegate that will be called whenever the authentication changes, for example whenever a log session has been created. This delegate should be used in C++.
 	FCapsaCoreOnAuthChangedDelegate OnAuthChanged;
 
-	/// @deprecated This will be removed and replaced with a generic K2 node to add arbitrary metadata. This function should not be used in Blueprints.
-	/// Register a FString Value for the given Key in the metadata.
-	/// @param Key Metadata Key
-	/// @param Value Metadata value
-	UFUNCTION(BlueprintCallable, Category = "Capsa|Log|CapsaCoreSubsystem|Metadata")
-	void RegisterMetadataString(const FString& Key, const FString& Value);
-
 	/// Access the FCapsaSharedData as replicated on the CapsaActorComponent.
 	/// @return FCapsaSharedData server data, or empty in case the CapsaActorComponent is not found.
 	UFUNCTION(BlueprintPure, Category = "Capsa|Log|CapsaCoreSubsystem|SessionData")
@@ -84,6 +77,13 @@ public:
 	/// @param Description The Linked log's description, fe. whether it's a server or client
 	/// @return bool True if the ID is valid and not already registered. Otherwise false.
 	bool RegisterLinkedLogID(const FString& LinkedLogID, const FString& Description);
+
+	/// @deprecated This will be removed and replaced with a generic K2 node to add arbitrary metadata. This function should not be used in Blueprints.
+	/// Register a FString Value for the given Key in the metadata.
+	/// @param Key Metadata Key
+	/// @param Value Metadata value
+	UFUNCTION(BlueprintCallable, Category = "Capsa|Log|CapsaCoreSubsystem|Metadata")
+	void RegisterMetadataString(const FString& Key, const FString& Value);
 
 	/// Attempts to Register the provided JsonValue to the given Key which will be sent to the server for metadata storage.
 	/// @param Key Metadata key
