@@ -1,4 +1,4 @@
-﻿// Copyright Companion Group, Ltd. Made available under the MIT license
+﻿// Copyright capsa.gg. Made available under the MIT license
 
 #pragma once
 

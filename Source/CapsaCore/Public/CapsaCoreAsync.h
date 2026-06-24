@@ -1,4 +1,4 @@
-// Copyright Companion Group, Ltd. Made available under the MIT license
+// Copyright capsa.gg. Made available under the MIT license
 
 #pragma once
 
@@ -127,7 +127,7 @@ public:
 		// Compress data
 		if (!MakeCompressedLogBinary(Log, CompressedLog))
 		{
-			UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to compress log binary" ))
+			UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to compress log binary" ));
 		}
 		else
 		{
@@ -138,7 +138,7 @@ public:
 			{
 				if (!SaveBinaryToFile(CompressedLog, LogID))
 				{
-					UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to write compressed file to disk" ))
+					UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to write compressed file to disk" ));
 				}
 			}
 		}
@@ -148,7 +148,7 @@ public:
 		{
 			if (!SaveStringToFile(Log, LogID))
 			{
-				UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to write plain text file to disk" ))
+				UE_LOG(LogCapsaCore, Warning, TEXT( "FSaveCompressedStringFromBufferTask::DoWork | Failed to write plain text file to disk" ));
 			}
 		}
 

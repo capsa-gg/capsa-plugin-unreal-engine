@@ -1,4 +1,4 @@
-// Copyright Companion Group, Ltd. Made available under the MIT license
+// Copyright capsa.gg. Made available under the MIT license
 
 #include "Misc/CapsaOutputDevice.h"
 
@@ -52,6 +52,7 @@ void FCapsaOutputDevice::Initialize()
 
 	if (TickRate > 0.0f)
 	{
+		GLog->SerializeBacklog(this);
 		TickerHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateRaw(this, &FCapsaOutputDevice::Tick), TickRate);
 		GLog->AddOutputDevice(this);
 		FCoreDelegates::OnEnginePreExit.AddRaw(this, &FCapsaOutputDevice::OnPreExit);

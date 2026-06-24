@@ -1,4 +1,4 @@
-// Copyright Companion Group, Ltd. Made available under the MIT license
+// Copyright capsa.gg. Made available under the MIT license
 
 #include "CapsaCoreSubsystem.h"
 
@@ -51,13 +51,6 @@ void UCapsaCoreSubsystem::Deinitialize()
 	Super::Deinitialize();
 }
 
-void UCapsaCoreSubsystem::RegisterMetadataString(const FString& Key, const FString& Value)
-{
-	TSharedPtr<FJsonValueString> JsonValue = MakeShared<FJsonValueString>(Value);
-	RegisterAdditionalMetadata(Key, JsonValue);
-	UE_LOG(LogCapsaCore, VeryVerbose, TEXT("UCapsaCoreSubsystem::RegisterMetadata | Registered metadata with key: %s, value :%s"), *Key, *Value);
-}
-
 FCapsaSharedData UCapsaCoreSubsystem::GetServerCapsaData() const
 {
 	if (!CapsaActorComponent.IsValid())
@@ -102,6 +95,13 @@ bool UCapsaCoreSubsystem::RegisterLinkedLogID(const FString& LinkedLogID, const 
 	LinkedLogIDs.Add(LinkedLogID, Description);
 	RequestSendMetadata();
 	return true;
+}
+
+void UCapsaCoreSubsystem::RegisterMetadataString(const FString& Key, const FString& Value)
+{
+	TSharedPtr<FJsonValueString> JsonValue = MakeShared<FJsonValueString>(Value);
+	RegisterAdditionalMetadata(Key, JsonValue);
+	UE_LOG(LogCapsaCore, VeryVerbose, TEXT("UCapsaCoreSubsystem::RegisterMetadata | Registered metadata with key: %s, value :%s"), *Key, *Value);
 }
 
 void UCapsaCoreSubsystem::RegisterAdditionalMetadata(const FString& Key, const TSharedPtr<FJsonValue>& Value)
