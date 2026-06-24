@@ -14,6 +14,7 @@
 
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/GameModeBase.h"
+#include "HttpManager.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(CapsaCoreSubsystem)
 
@@ -110,7 +111,7 @@ void UCapsaCoreSubsystem::RegisterAdditionalMetadata(const FString& Key, const T
 	RequestSendMetadata();
 }
 
-void UCapsaCoreSubsystem::SendLog(TArray<FBufferedLine>& LogBuffer)
+void UCapsaCoreSubsystem::SendLog(TArray<FBufferedLine>& LogBuffer, bool bBlocking)
 {
 	const UCapsaSettings* CapsaSettings = GetDefault<UCapsaSettings>();
 	if (CapsaSettings == nullptr || !CapsaSettings->IsValidLowLevelFast())
@@ -119,27 +120,86 @@ void UCapsaCoreSubsystem::SendLog(TArray<FBufferedLine>& LogBuffer)
 		return;
 	}
 
-	if (CapsaSettings->GetUseCompression())
+	if (!FHttpModule::Get().IsHttpEnabled())
 	{
-		FAsyncBinaryFromBufferCallback CallbackFunc = [this](const TArray<uint8>& CompressedLog)
-		{
-			RequestSendCompressedLog(CompressedLog);
-		};
-		// Example AsyncTask to attempt to SAVE the file using the LogID (as filename), whether compressed or not, then fire the Callback.
-		// This requires a Binary Callback, not an FString
-		(new FAutoDeleteAsyncTask<FSaveCompressedStringFromBufferTask>(LogID, CapsaSettings->GetWriteToDiskPlain(), CapsaSettings->GetWriteToDiskCompressed(),
-			MoveTemp(LogBuffer), CallbackFunc))->StartBackgroundTask();
+		UE_LOG(LogCapsaCore, Error, TEXT( "UCapsaCoreSubsystem::SendLog | FHttpModule::IsHttpEnabled() == false | returning" ));
+		return;
 	}
-	else // !bUseCompression
+
+	if (bBlocking) // During shutdown
 	{
-		FAsyncStringFromBufferCallback CallbackFunc = [this](const FString& Log)
+		UE_LOG(LogCapsaCore, Display, TEXT("UCapsaCoreSubsystem::SendLog | bBlocking == true | starting blocking log sending procedure"))
+		if (CapsaSettings->GetUseCompression())
 		{
-			RequestSendLog(Log);
-		};
-		// These all require an FString Callback.
-		// Example AsyncTask to generate a Log and Optionally write it to Disk, then fire the Callback.
-		(new FAutoDeleteAsyncTask<FSaveStringFromBufferTask>(LogID, CapsaSettings->GetWriteToDiskPlain(), MoveTemp(LogBuffer), CallbackFunc))->
-			StartBackgroundTask();
+			const FString UncompressedLog = CapsaLogOperations::MakeLogString(LogBuffer);
+			TArray<uint8> CompressedLog;
+			if (CapsaLogOperations::MakeCompressedLogBinary(UncompressedLog, CompressedLog))
+			{
+				UE_LOG(LogCapsaCore, Display, TEXT("UCapsaCoreSubsystem::SendLog | Sending blocking compressed log"))
+				RequestSendCompressedLog(CompressedLog, true);
+			}
+			else
+			{
+				UE_LOG(LogCapsaCore, Error, TEXT("UCapsaCoreSubsystem::SendLog | Error compressing logs"))
+			}
+
+			if (CapsaSettings->GetWriteToDiskPlain())
+			{
+				if (!CapsaLogOperations::SaveStringToFile(UncompressedLog, LogID, CapsaLogOperations::DefaultUncompressedLogExtension))
+				{
+					UE_LOG(LogCapsaCore, Error, TEXT("UCapsaCoreSubsystem::SendLog | Error storing uncompressed log to disk"))
+				}
+			}
+
+			if (CapsaSettings->GetWriteToDiskCompressed())
+			{
+				if (!CapsaLogOperations::SaveBinaryToFile(CompressedLog, LogID, CapsaLogOperations::DefaultCompressedLogExtension))
+				{
+					UE_LOG(LogCapsaCore, Error, TEXT("UCapsaCoreSubsystem::SendLog | Error storing compressed log to disk"))
+				};
+			}
+		}
+		else // !bUseCompression
+		{
+			const FString UncompressedLog = CapsaLogOperations::MakeLogString(LogBuffer);
+			UE_LOG(LogCapsaCore, Display, TEXT("UCapsaCoreSubsystem::SendLog | Sending blocking uncompressed log"))
+			RequestSendLog(UncompressedLog, true);
+
+			if (CapsaSettings->GetWriteToDiskPlain())
+			{
+				if (!CapsaLogOperations::SaveStringToFile(UncompressedLog, LogID, CapsaLogOperations::DefaultUncompressedLogExtension))
+				{
+					UE_LOG(LogCapsaCore, Error, TEXT("UCapsaCoreSubsystem::SendLog | Error storing uncompressed log to disk"))
+				}
+			}
+		}
+	}
+	else // !bBlocking
+	{
+		UE_LOG(LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::SendLog | bBlocking == false | starting async log sending procedure"))
+		if (CapsaSettings->GetUseCompression())
+		{
+			FAsyncBinaryFromBufferCallback CallbackFunc = [this](const TArray<uint8>& CompressedLog)
+			{
+				RequestSendCompressedLog(CompressedLog);
+			};
+			// Example AsyncTask to attempt to SAVE the file using the LogID (as filename), whether compressed or not, then fire the Callback.
+			// This requires a Binary Callback, not an FString
+			(new FAutoDeleteAsyncTask<FSaveCompressedStringFromBufferTask>(LogID, CapsaSettings->GetWriteToDiskPlain(),
+				CapsaSettings->GetWriteToDiskCompressed(),
+				MoveTemp(LogBuffer), CallbackFunc))->StartBackgroundTask();
+		}
+		else // !bUseCompression
+		{
+			FAsyncStringFromBufferCallback CallbackFunc = [this](const FString& Log)
+			{
+				RequestSendLog(Log);
+			};
+			// These all require an FString Callback.
+			// Example AsyncTask to generate a Log and Optionally write it to Disk, then fire the Callback.
+			(new FAutoDeleteAsyncTask<FSaveStringFromBufferTask>(LogID, CapsaSettings->GetWriteToDiskPlain(), MoveTemp(LogBuffer), CallbackFunc))->
+				StartBackgroundTask();
+		}
 	}
 }
 
@@ -182,7 +242,7 @@ void UCapsaCoreSubsystem::RequestClientAuth()
 	UE_LOG(LogCapsaCore, Log, TEXT("UCapsaCoreSubsystem::RequestClientAuth | Authentication request sent"));
 }
 
-void UCapsaCoreSubsystem::RequestSendLog(const FString& Log)
+void UCapsaCoreSubsystem::RequestSendLog(const FString& Log, bool bBlocking)
 {
 	UE_LOG(LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::RequestSendLog | Sending log chunk without compression"));
 
@@ -199,13 +259,30 @@ void UCapsaCoreSubsystem::RequestSendLog(const FString& Log)
 	LogRequest->SetHeader("Authorization", GetAuthHeader());
 	LogRequest->SetHeader("Content-Type", "text/plain");
 	LogRequest->SetContentAsString(Log);
-	LogRequest->OnProcessRequestComplete().BindUObject(this, &UCapsaCoreSubsystem::LogResponse);
-	LogRequest->ProcessRequest();
+
+	if (bBlocking)
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(RequestSendLogBlocking);
+		FEvent* CompletionEvent = FPlatformProcess::GetSynchEventFromPool(true);
+		LogRequest->OnProcessRequestComplete().BindLambda([this, CompletionEvent](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess)
+		{
+			LogResponse(Request, Response, bSuccess);
+			CompletionEvent->Trigger();
+		});
+		LogRequest->ProcessRequest();
+		CompletionEvent->Wait();
+		FPlatformProcess::ReturnSynchEventToPool(CompletionEvent);
+	}
+	else
+	{
+		LogRequest->OnProcessRequestComplete().BindUObject(this, &UCapsaCoreSubsystem::LogResponse);
+		LogRequest->ProcessRequest();
+	}
 
 	UE_LOG(LogCapsaCore, VeryVerbose, TEXT("UCapsaCoreSubsystem::RequestSendLog | Log sent"));
 }
 
-void UCapsaCoreSubsystem::RequestSendCompressedLog(const TArray<uint8>& CompressedLog)
+void UCapsaCoreSubsystem::RequestSendCompressedLog(const TArray<uint8>& CompressedLog, bool bBlocking)
 {
 	UE_LOG(LogCapsaCore, Verbose, TEXT("UCapsaCoreSubsystem::RequestSendCompressedLog | Sending log chunk with compression"));
 
@@ -222,8 +299,33 @@ void UCapsaCoreSubsystem::RequestSendCompressedLog(const TArray<uint8>& Compress
 	LogRequest->SetHeader("Authorization", GetAuthHeader());
 	LogRequest->SetHeader("Content-Type", "application/zlib");
 	LogRequest->SetContent(CompressedLog);
-	LogRequest->OnProcessRequestComplete().BindUObject(this, &UCapsaCoreSubsystem::LogResponse);
-	LogRequest->ProcessRequest();
+
+	if (bBlocking)
+	{
+		TRACE_CPUPROFILER_EVENT_SCOPE(RequestSendCompressedLogBlocking);
+		FEvent* CompletionEvent = FPlatformProcess::GetSynchEventFromPool(true);
+		LogRequest->OnProcessRequestComplete().BindLambda([this, CompletionEvent](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess)
+		{
+			// Lambda never gets called?
+			LogResponse(Request, Response, bSuccess);
+			CompletionEvent->Trigger();
+		});
+		LogRequest->ProcessRequest();
+
+		// Manually tick HTTP module until the request completes
+		while (!CompletionEvent->Wait(0.01f))
+		{
+			FHttpModule::Get().GetHttpManager().Tick(0.01f);
+			FPlatformProcess::Sleep(0.01f);
+		}
+
+		FPlatformProcess::ReturnSynchEventToPool(CompletionEvent);
+	}
+	else
+	{
+		LogRequest->OnProcessRequestComplete().BindUObject(this, &UCapsaCoreSubsystem::LogResponse);
+		LogRequest->ProcessRequest();
+	}
 
 	UE_LOG(LogCapsaCore, VeryVerbose, TEXT("UCapsaCoreSubsystem::RequestSendCompressedLog | Compressed log sent"));
 }

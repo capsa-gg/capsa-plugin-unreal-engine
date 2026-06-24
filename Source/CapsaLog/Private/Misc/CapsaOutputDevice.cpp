@@ -116,7 +116,7 @@ void FCapsaOutputDevice::OnPreExit()
 		{
 			TArray<FBufferedLine> BufferToSend;
 			GetContents(BufferToSend);
-			CapsaCoreSubsystem->SendLog(BufferToSend);
+			CapsaCoreSubsystem->SendLog(BufferToSend, true);
 		}
 	}
 }
