@@ -52,7 +52,10 @@ void FCapsaOutputDevice::Initialize()
 
 	if (TickRate > 0.0f)
 	{
+#if ENGINE_MAJOR_VERSION <= 5 && ENGINE_MINOR_VERSION < 7
+		// SerializeBacklog is called within AddOutputDevice from UE5.7 onwards.
 		GLog->SerializeBacklog(this);
+#endif
 		TickerHandle = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateRaw(this, &FCapsaOutputDevice::Tick), TickRate);
 		GLog->AddOutputDevice(this);
 		FCoreDelegates::OnEnginePreExit.AddRaw(this, &FCapsaOutputDevice::OnPreExit);
